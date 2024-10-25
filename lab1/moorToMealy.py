@@ -1,4 +1,12 @@
 import bisect
+
+NAME_POINTS = "Q"
+NAME_NEW_POINTS = "S"
+NAME_OUTPUT_CH = "Y"
+NUMBER_OUTPUT_CH = 0
+NUMBER_POINTS = 1
+SEPARATOR = ";"
+
 def moore_to_mealy(input_file, output_file):
     lines = input_file.readlines()
 
@@ -7,34 +15,36 @@ def moore_to_mealy(input_file, output_file):
     input_characters = get_input_characters(moore_mass)
     mealy_mass = create_mealy(input_characters, points)
 
-
     last_item = ""
-    for i, item in enumerate(moore_mass[len(moore_mass) - 1]):
+    for i, item in enumerate(moore_mass[NAME_NEW_POINTS]):
         if last_item == item: continue
         last_item = item
-        for k in range(2, len(moore_mass)-1) :
-            old_point = moore_mass[k][i]
-            moor_input_ch = moore_mass[k][0]
+        for k, key in enumerate(moore_mass) :
+            if key_is_system_ch(key): continue
+            old_point = moore_mass[key][i]
 
-            mealy_index_input_ch = 0
-            for b in range(1,len(moore_mass)-1):
-                if mealy_mass[b][0] == moor_input_ch:
-                    mealy_index_input_ch = b
-                    break
+            index = moore_mass[NAME_POINTS].index(old_point)
+            new_moore_point = moore_mass[NAME_NEW_POINTS][index]
+            moore_output_ch = moore_mass[NAME_OUTPUT_CH][index]
+            #TODO МОЖНО АВТОМАТИЗИРОВАТЬ С ПОМОЩЬЮ BISECT.BISECT_LEFT
 
-            new_moore_point = moore_mass[len(moore_mass)-1][moore_mass[1].index(old_point)]
+            mealy_mass[key][i] = new_moore_point + "/" + moore_output_ch
 
-            mealy_index_point = bisect.bisect_left(mealy_mass[0], item)
-
-            moore_output_ch = moore_mass[0][bisect.bisect_left(moore_mass[1], old_point)]
-
-            mealy_mass[mealy_index_input_ch][mealy_index_point] = new_moore_point + "/" + moore_output_ch
-
-    for i, line in enumerate(mealy_mass):
-        for k, ch in enumerate(line):
+    output_file.write(SEPARATOR)
+    for k, point in enumerate(mealy_mass[NAME_NEW_POINTS]):
+        output_file.write(point)
+        if k < len(mealy_mass[NAME_NEW_POINTS]) - 1: output_file.write(SEPARATOR)
+    output_file.write("\n")
+    for i, key in enumerate(mealy_mass):
+        if i == 0: continue
+        output_file.write(key)
+        output_file.write(SEPARATOR)
+        for k, ch in enumerate(mealy_mass[key]):
             output_file.write(ch)
-            if k < len(line) - 1: output_file.write(";")
+            if k < len(mealy_mass[key]) - 1: output_file.write(";")
         output_file.write("\n")
+
+
     for i, line in enumerate(mealy_mass):
         print(line)
 
@@ -49,55 +59,81 @@ def moore_to_mealy(input_file, output_file):
 
 def create_mealy(input_characters, points):
     line_number = 0
-    mealy_mass = []
-    mealy_mass.append([""])
+    mealy_mass = dict()
+    mealy_mass[NAME_NEW_POINTS] = []
+    for k, point in enumerate(points):
+        mealy_mass[NAME_NEW_POINTS].append(point)
     for i, ch in enumerate(input_characters):
         if ch != "":
-            mealy_mass.append([ch])
+            mealy_mass[ch] = []
 
         for k, point in enumerate(points):
-            mealy_mass[line_number].append(point)
+            mealy_mass[ch].append(point)
         line_number += 1
-    for k, point in enumerate(points):
-        mealy_mass[line_number].append(point)
+
 
     return mealy_mass
 
 def get_moore_mass(lines):
-    mass = [[] for _ in range(len(lines))]
+    mass = dict()
+    output_ch_line = lines[NUMBER_OUTPUT_CH]
+    points_line = lines[NUMBER_POINTS]
+
+    temp = output_ch_line.strip().split(SEPARATOR)
+    mass[NAME_OUTPUT_CH] = []
+    for i, item in enumerate(temp):
+        if item != "":
+         mass[NAME_OUTPUT_CH].append(item)
+
+
+    temp = points_line.strip().split(SEPARATOR)
+    mass[NAME_POINTS] = []
+    for i, item in enumerate(temp):
+        if item != "":
+            mass[NAME_POINTS].append(item)
+
     for i, line in enumerate(lines):
-        temp = line.strip().split(";")
-        mass[i] = temp
+        if i in range(0,2): continue
+        temp = line.strip().split(SEPARATOR)
+        mass[temp[0]] = []
+        for k, item in enumerate(temp):
+            if k != 0:
+                mass[temp[0]].append(item)
     return mass
 
 def get_input_characters(moore_mass):
     mass = []
-    for i in range(1, len(moore_mass)):
-        if moore_mass[i][0] != "": mass.append(moore_mass[i][0])
+    for key in moore_mass:
+        if key_is_system_ch(key): continue
+        mass.append(key)
     return mass
 
 
 def add_points(moore_mass):
-    points = []
     finded_points = 1
     points = []
-    line = 2
+    start_line = 2
     stolb = 1
-    moore_mass.append([""])
-    new_point = ""
-    for i in range(1, len(moore_mass[0])-1):
+    moore_mass[NAME_NEW_POINTS] = []
+    leng = len(moore_mass[NAME_POINTS])
+    for i in range(0,  leng-1):
         find_new_point = False
-        for k in range(line, len(moore_mass) - 1):
-            f1 = moore_mass[k][i]
-            f2 = moore_mass[k][i + 1]
+        for k, key in enumerate(moore_mass):
+            if k in range(0,2): continue
+            f1 = moore_mass[key][i]
+            f2 = moore_mass[key][i + 1]
             if f1 != f2:
                 find_new_point = True
                 stolb += 1
                 break
-        new_point = "F" + str(finded_points)
-        moore_mass[len(moore_mass) - 1].append(new_point)
+        new_point = NAME_NEW_POINTS + str(finded_points)
+        moore_mass[NAME_NEW_POINTS].append(new_point)
         if new_point not in points: points.append(new_point)
         if  find_new_point: finded_points += 1
-    moore_mass[len(moore_mass) - 1].append("F" + str(finded_points))
-    points.append("F" + str(finded_points))
+    moore_mass[NAME_NEW_POINTS].append(NAME_NEW_POINTS + str(finded_points))
+    points.append(NAME_NEW_POINTS + str(finded_points))
     return points
+
+def key_is_system_ch(key):
+    if key in [NAME_NEW_POINTS, NAME_OUTPUT_CH, NAME_POINTS]: return True
+    else: return False
