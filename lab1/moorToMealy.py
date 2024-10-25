@@ -1,5 +1,3 @@
-import bisect
-
 NAME_POINTS = "Q"
 NAME_NEW_POINTS = "S"
 NAME_OUTPUT_CH = "Y"
@@ -26,7 +24,6 @@ def moore_to_mealy(input_file, output_file):
             index = moore_mass[NAME_POINTS].index(old_point)
             new_moore_point = moore_mass[NAME_NEW_POINTS][index]
             moore_output_ch = moore_mass[NAME_OUTPUT_CH][index]
-            #TODO МОЖНО АВТОМАТИЗИРОВАТЬ С ПОМОЩЬЮ BISECT.BISECT_LEFT
 
             mealy_mass[key][i] = new_moore_point + "/" + moore_output_ch
 
@@ -47,15 +44,6 @@ def moore_to_mealy(input_file, output_file):
 
     for i, line in enumerate(mealy_mass):
         print(line)
-
-
-
-    return 5
-#TODO создание автомата мили:
-# можно модифицировать moore_mass
-# снизу/сверху каждой вершины добавить её новый номер
-# читаем также как и при получении вершин и держим в памяти какая вершина была предыдушей
-# если она равна предыдущей, то пропускаем данный столбик
 
 def create_mealy(input_characters, points):
     line_number = 0
@@ -112,7 +100,6 @@ def get_input_characters(moore_mass):
 def add_points(moore_mass):
     finded_points = 1
     points = []
-    start_line = 2
     stolb = 1
     moore_mass[NAME_NEW_POINTS] = []
     leng = len(moore_mass[NAME_POINTS])

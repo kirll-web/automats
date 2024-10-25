@@ -16,7 +16,6 @@ def mealy_to_moore(input_file, output_file):
     input_characters, transitions = get_input_characters_with_transitions(mealy_mass)
     offset = 4
 
-    #todo остановился здесь. Надо переделать moore на dict
     moore_mass = dict()
 
     moore_mass[NAME_TRANSITION] = []
@@ -41,7 +40,6 @@ def mealy_to_moore(input_file, output_file):
             index = moore_mass[NAME_TRANSITION].index(
                 get_q(
                     mealy_mass=mealy_mass,
-                    moore_mass=moore_mass,
                     moore_q=moore_q,
                     moore_input_ch=moore_input_ch
                 )
@@ -57,7 +55,7 @@ def mealy_to_moore(input_file, output_file):
         output_file.write("\n")
 
 
-def get_q(mealy_mass, moore_mass, moore_q, moore_input_ch):
+def get_q(mealy_mass, moore_q, moore_input_ch):
     i = mealy_mass[NAME_POINTS].index(moore_q)
     q = mealy_mass[moore_input_ch][i]
     return q
