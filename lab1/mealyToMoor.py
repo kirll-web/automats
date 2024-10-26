@@ -47,11 +47,14 @@ def mealy_to_moore(input_file, output_file):
             moore_mass[line].append(moore_mass[NAME_NEW_POINTS][index])
 
     for i, line in enumerate(moore_mass):
-        print(line, moore_mass[line])
         if i in range(0,2): continue
-        for k, ch in enumerate(line):
+        if i in range(2, 4): output_file.write(SEPARATOR)
+        else:
+            output_file.write(line)
+            output_file.write(SEPARATOR)
+        for k, ch in enumerate(moore_mass[line]):
             output_file.write(ch)
-            if k < len(line) - 1: output_file.write(SEPARATOR)
+            if k < len(moore_mass[line]) - 1: output_file.write(SEPARATOR)
         output_file.write("\n")
 
 
