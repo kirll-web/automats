@@ -107,6 +107,7 @@ def add_points(moore_mass):
         find_new_point = False
         for k, key in enumerate(moore_mass):
             if k in range(0,2): continue
+            if key == NAME_NEW_POINTS: continue
             f1 = moore_mass[key][i]
             f2 = moore_mass[key][i + 1]
             if f1 != f2:
