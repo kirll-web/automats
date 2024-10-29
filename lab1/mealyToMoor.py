@@ -23,11 +23,15 @@ def mealy_to_moore(input_file, output_file):
     moore_mass[NAME_OUTPUT_CH] = []
     moore_mass[NAME_NEW_POINTS] = []
 
-    for i, (q, t) in enumerate(transitions):
-        moore_mass[NAME_TRANSITION].append([q,t])
-        moore_mass[NAME_POINTS].append(q)
-        moore_mass[NAME_OUTPUT_CH].append(t)
-        moore_mass[NAME_NEW_POINTS].append("R" + str(i))
+    count = 0
+    for i, q in enumerate(mealy_mass[NAME_POINTS]):
+        if q in transitions:
+            for k, t in enumerate(transitions[q]):
+                moore_mass[NAME_TRANSITION].append([q, t])
+                moore_mass[NAME_POINTS].append(q)
+                moore_mass[NAME_OUTPUT_CH].append(t)
+                moore_mass[NAME_NEW_POINTS].append("R" + str(count))
+                count += 1
 
     for i, ch in enumerate(input_characters):
         moore_mass[ch] = []
@@ -83,14 +87,18 @@ def get_mealy_mass(lines):
 
 def get_input_characters_with_transitions(mass):
     input_characters = []
-    transitions = []
+    transitions = dict()
     for i, key in enumerate(mass):
         if key_is_system_ch(key): continue
         input_characters.append(key)
         for k, transition in enumerate(mass[key]):
-            if transition not in transitions:
-                transitions.append(transition)
-    return [input_characters,sorted(transitions)]
+            if transition[0] not in transitions:
+                transitions[transition[0]] = dict()
+            transitions[transition[0]][transition[1]] = ""
+
+    for k, transition in enumerate(transitions):
+        transitions[transition] = sorted(transitions[transition])
+    return [input_characters, transitions]
 
 def key_is_system_ch(key):
     if key in [NAME_NEW_POINTS, NAME_OUTPUT_CH, NAME_POINTS]: return True

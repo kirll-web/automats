@@ -5,6 +5,8 @@ NUMBER_OUTPUT_CH = 0
 NUMBER_POINTS = 1
 SEPARATOR = ";"
 
+reachable_points = dict()
+
 def moore_to_mealy(input_file, output_file):
     lines = input_file.readlines()
 
@@ -18,17 +20,22 @@ def moore_to_mealy(input_file, output_file):
     mealy_mass = dict()
     mealy_mass[NAME_POINTS] = []
 
+    unreachable_points_indexes = dict()
+
     for i, line in enumerate(moore_mass):
         if line == NAME_OUTPUT_CH: continue
         if line == NAME_POINTS:
-            for i, point in enumerate(moore_mass[line]):
-                mealy_mass[NAME_POINTS].append(point)
+            for k, point in enumerate(moore_mass[line]):
+                if point in reachable_points:
+                    mealy_mass[NAME_POINTS].append(point)
+                else: unreachable_points_indexes[k] = "" #добавляем индекс недостижимой вершины, чтобы не читать их
             continue
 
-        for i, transition in enumerate(moore_mass[line]):
+        for b, transition in enumerate(moore_mass[line]):
             if line not in mealy_mass:
                 mealy_mass[line] = []
-            mealy_mass[line].append(f"{transition}/{points_with_transition[transition]}")
+            if b not in unreachable_points_indexes:
+                mealy_mass[line].append(f"{transition}/{points_with_transition[transition]}")
 
     for i, line in enumerate(mealy_mass):
         if line == NAME_POINTS:
@@ -65,4 +72,5 @@ def get_moore_mass(lines):
         for k, item in enumerate(temp):
             if k != 0:
                 mass[temp[0]].append(item)
+                reachable_points[item] = ""
     return mass
