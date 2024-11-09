@@ -6,9 +6,7 @@ NUMBER_TRANSITION = 0
 NUMBER_OUTPUT_CH = 2
 NUMBER_POINTS = 1
 
-
 SEPARATOR = ";"
-
 
 def mealy_to_moore(input_file, output_file):
     lines = input_file.readlines()
@@ -35,7 +33,7 @@ def mealy_to_moore(input_file, output_file):
 
     for i, ch in enumerate(input_characters):
         moore_mass[ch] = []
-
+    visited_q = dict()
     for i, line in enumerate(moore_mass):
         if i in range(0, offset): continue
         for k, _ in enumerate(moore_mass[NAME_TRANSITION]):
@@ -48,7 +46,16 @@ def mealy_to_moore(input_file, output_file):
                     moore_input_ch=moore_input_ch
                 )
             )
-            moore_mass[line].append(moore_mass[NAME_NEW_POINTS][index])
+            newTr = moore_mass[NAME_NEW_POINTS][index]
+            moore_mass[line].append(newTr)
+            if newTr == moore_mass[NAME_NEW_POINTS][0] or newTr != moore_mass[NAME_NEW_POINTS][k]:
+                visited_q[newTr] = ""
+
+    for i, q in enumerate(moore_mass[NAME_NEW_POINTS]):
+        if q not in visited_q:
+            for k, s in enumerate(moore_mass):
+                moore_mass[s].pop(i)
+
 
     for i, line in enumerate(moore_mass):
         if i in range(0,2): continue

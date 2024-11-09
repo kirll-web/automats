@@ -21,7 +21,7 @@ def moore_to_mealy(input_file, output_file):
     mealy_mass[NAME_POINTS] = []
 
     unreachable_points_indexes = dict()
-
+    visited_q = dict()
     for i, line in enumerate(moore_mass):
         if line == NAME_OUTPUT_CH: continue
         if line == NAME_POINTS:
@@ -36,14 +36,24 @@ def moore_to_mealy(input_file, output_file):
                 mealy_mass[line] = []
             if b not in unreachable_points_indexes:
                 mealy_mass[line].append(f"{transition}/{points_with_transition[transition]}")
+            if transition == mealy_mass[NAME_POINTS][0] or transition != mealy_mass[NAME_POINTS][b]:
+                visited_q[transition] = ""
 
+
+    reacheble_indexes = dict()
     for i, line in enumerate(mealy_mass):
         if line == NAME_POINTS:
             output_file.write(";")
         else: output_file.write(f"{line};")
         for k, ch in enumerate(mealy_mass[line]):
-            output_file.write(ch)
-            if k < len(mealy_mass[line]) - 1: output_file.write(SEPARATOR)
+            if (line == NAME_POINTS and ch in visited_q) or k == 0:
+                output_file.write(ch)
+                reacheble_indexes[k] = ""
+                if k < len(mealy_mass[line])  - len(reacheble_indexes): output_file.write(SEPARATOR)
+                continue
+            if k in reacheble_indexes:
+                output_file.write(ch)
+                if k < len(mealy_mass[line]) - len(reacheble_indexes): output_file.write(SEPARATOR)
         output_file.write("\n")
 
 
