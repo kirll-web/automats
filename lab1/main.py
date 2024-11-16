@@ -1,3 +1,4 @@
+
 import sys
 import mealyToMoor
 import moorToMealy
@@ -5,13 +6,13 @@ import moorToMealy
 COMMAND_MEALY_TO_MOORE = "mealy-to-moore"
 COMMAND_MOORE_TO_MEALY = "moore-to-mealy"
 
-
 # program moore-to-mealy moore.csv mealy.csv
 # program mealy-to-moore mealy.csv moore.csv
+
 def main(args):
-    command = args[0]
-    input_file_name = args[1]
-    output_file_name = args[2]
+    command = args[0] #COMMAND_MOORE_TO_MEALY
+    input_file_name = args[1]#  "5moo.csv"
+    output_file_name = args[2]#  "5mea.csv"
     input_file = open(input_file_name, "r")
     output_file = open(output_file_name, "w")
     if command == COMMAND_MEALY_TO_MOORE:

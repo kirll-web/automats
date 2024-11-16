@@ -1,3 +1,6 @@
+from distutils.command.config import config
+from operator import truediv
+
 NAME_POINTS = "Q"
 NAME_NEW_POINTS = "S"
 NAME_OUTPUT_CH = "Y"
@@ -7,6 +10,13 @@ NUMBER_OUTPUT_CH = 2
 NUMBER_POINTS = 1
 
 SEPARATOR = ";"
+
+class Ptr:
+    def __init__(self, value):
+        self.value: str = value
+        self.next = dict()
+        self.prev = dict()
+
 
 def mealy_to_moore(input_file, output_file):
     lines = input_file.readlines()
@@ -33,7 +43,6 @@ def mealy_to_moore(input_file, output_file):
 
     for i, ch in enumerate(input_characters):
         moore_mass[ch] = []
-    visited_q = dict()
     for i, line in enumerate(moore_mass):
         if i in range(0, offset): continue
         for k, _ in enumerate(moore_mass[NAME_TRANSITION]):
@@ -46,28 +55,73 @@ def mealy_to_moore(input_file, output_file):
                     moore_input_ch=moore_input_ch
                 )
             )
-            newTr = moore_mass[NAME_NEW_POINTS][index]
-            moore_mass[line].append(newTr)
-            if newTr == moore_mass[NAME_NEW_POINTS][0] or newTr != moore_mass[NAME_NEW_POINTS][k]:
-                visited_q[newTr] = ""
+            new_tr = moore_mass[NAME_NEW_POINTS][index]
+            moore_mass[line].append(new_tr)
 
-    for i, q in enumerate(moore_mass[NAME_NEW_POINTS]):
-        if q not in visited_q:
-            for k, s in enumerate(moore_mass):
-                moore_mass[s].pop(i)
+
+    graph = dict()
+
+    for i, ch in enumerate(moore_mass[NAME_NEW_POINTS]):
+        graph[ch] = Ptr(ch)
+
+    for i, new_point in enumerate(moore_mass[NAME_NEW_POINTS]):
+        for k, ch in enumerate(moore_mass):
+            if k in range(0, offset):
+                continue
+            else:
+                s = moore_mass[ch][i]
+                if s not in graph: graph[s] = Ptr(s)
+                graph[new_point].next[s] = graph[s]
+                graph[s].prev[graph[new_point].value] = graph[new_point]
+
+
+    has_unreach = True
+    while has_unreach:
+        has_unreach = False
+        new_graph = dict()
+        for i, ptr in enumerate(graph):
+            if ptr != moore_mass[NAME_NEW_POINTS][0] and len(graph[ptr].prev) == 0:
+                has_unreach = True
+                for b, nextPtr in enumerate(graph[ptr].next):
+                    del graph[nextPtr].prev[ptr]
+            else: new_graph[ptr] = graph[ptr]
+        graph = new_graph
+
+
+
+    new_moore_mass = dict()
+    new_moore_mass[NAME_TRANSITION] = []
+    new_moore_mass[NAME_POINTS] = []
+    new_moore_mass[NAME_OUTPUT_CH] = []
+    new_moore_mass[NAME_NEW_POINTS] = []
+    for i, ch in enumerate(moore_mass[NAME_NEW_POINTS]):
+        if ch not in graph: continue
+        for k, line in enumerate(moore_mass):
+            if line not in new_moore_mass: new_moore_mass[line] = list()
+            new_moore_mass[line].append(moore_mass[line][i])
+
+    moore_mass = new_moore_mass
 
 
     for i, line in enumerate(moore_mass):
-        if i in range(0,2): continue
+        if i in range(0, 2): continue
         if i in range(2, 4): output_file.write(SEPARATOR)
         else:
             output_file.write(line)
             output_file.write(SEPARATOR)
+        count_separator = 0
         for k, ch in enumerate(moore_mass[line]):
+            if line == NAME_OUTPUT_CH or line == NAME_NEW_POINTS:
+                output_file.write(ch)
+                count_separator += 1
+                if count_separator < len(moore_mass[NAME_NEW_POINTS]):
+                    output_file.write(SEPARATOR)
+                continue
             output_file.write(ch)
-            if k < len(moore_mass[line]) - 1: output_file.write(SEPARATOR)
+            count_separator += 1
+            if count_separator < len(moore_mass[NAME_NEW_POINTS]):
+                output_file.write(SEPARATOR)
         output_file.write("\n")
-
 
 def get_q(mealy_mass, moore_q, moore_input_ch):
     i = mealy_mass[NAME_POINTS].index(moore_q)

@@ -6,6 +6,11 @@ NUMBER_POINTS = 1
 SEPARATOR = ";"
 
 reachable_points = dict()
+class Ptr:
+    def __init__(self, value):
+        self.value: str = value
+        self.next = dict()
+        self.prev = dict()
 
 def moore_to_mealy(input_file, output_file):
     lines = input_file.readlines()
@@ -20,40 +25,66 @@ def moore_to_mealy(input_file, output_file):
     mealy_mass = dict()
     mealy_mass[NAME_POINTS] = []
 
-    unreachable_points_indexes = dict()
-    visited_q = dict()
     for i, line in enumerate(moore_mass):
         if line == NAME_OUTPUT_CH: continue
         if line == NAME_POINTS:
             for k, point in enumerate(moore_mass[line]):
-                if point in reachable_points:
-                    mealy_mass[NAME_POINTS].append(point)
-                else: unreachable_points_indexes[k] = "" #добавляем индекс недостижимой вершины, чтобы не читать их
+                mealy_mass[line].append(point)
             continue
-
         for b, transition in enumerate(moore_mass[line]):
-            if line not in mealy_mass:
-                mealy_mass[line] = []
-            if b not in unreachable_points_indexes:
-                mealy_mass[line].append(f"{transition}/{points_with_transition[transition]}")
-            if transition == mealy_mass[NAME_POINTS][0] or transition != mealy_mass[NAME_POINTS][b]:
-                visited_q[transition] = ""
+            if line not in mealy_mass: mealy_mass[line] = []
+            mealy_mass[line].append(f"{transition}/{points_with_transition[transition]}")
 
+    graph = dict()
 
-    reacheble_indexes = dict()
+    for i, ch in enumerate(mealy_mass[NAME_POINTS]):
+        graph[ch] = Ptr(ch)
+
+    for i, new_point in enumerate(mealy_mass[NAME_POINTS]):
+        for k, ch in enumerate(mealy_mass):
+            if k in range(0, 1): continue
+            else:
+                s = mealy_mass[ch][i]
+                if s not in graph: graph[getQ(s)] = Ptr(getQ(s))
+                graph[new_point].next[getQ(s)] = graph[getQ(s)]
+                graph[getQ(s)].prev[new_point] = graph[new_point]
+
+    has_unreach = True
+    while has_unreach:
+        has_unreach = False
+        new_graph = dict()
+        for i, ptr in enumerate(graph):
+            if ptr != mealy_mass[NAME_POINTS][0] and len(graph[ptr].prev) == 0:
+                has_unreach = True
+                for b, nextPtr in enumerate(graph[ptr].next):
+                    del graph[nextPtr].prev[ptr]
+            else:
+                new_graph[ptr] = graph[ptr]
+        graph = new_graph
+
+    new_mealy_mass = dict()
+    new_mealy_mass[NAME_POINTS] = []
+    for i, ch in enumerate(mealy_mass[NAME_POINTS]):
+        if ch not in graph: continue
+        for k, line in enumerate(mealy_mass):
+            if line not in new_mealy_mass: new_mealy_mass[line] = list()
+            new_mealy_mass[line].append(mealy_mass[line][i])
+
+    mealy_mass = new_mealy_mass
+
     for i, line in enumerate(mealy_mass):
         if line == NAME_POINTS:
             output_file.write(";")
         else: output_file.write(f"{line};")
         for k, ch in enumerate(mealy_mass[line]):
-            if (line == NAME_POINTS and ch in visited_q) or k == 0:
+            if line == NAME_POINTS:
                 output_file.write(ch)
-                reacheble_indexes[k] = ""
-                if k < len(mealy_mass[line])  - len(reacheble_indexes): output_file.write(SEPARATOR)
+                if k < len(mealy_mass[line]) - 1:
+                    output_file.write(SEPARATOR)
                 continue
-            if k in reacheble_indexes:
-                output_file.write(ch)
-                if k < len(mealy_mass[line]) - len(reacheble_indexes): output_file.write(SEPARATOR)
+            output_file.write(ch)
+            if k < len(mealy_mass[line]) - 1:
+                    output_file.write(SEPARATOR)
         output_file.write("\n")
 
 
@@ -84,3 +115,7 @@ def get_moore_mass(lines):
                 mass[temp[0]].append(item)
                 reachable_points[item] = ""
     return mass
+
+def getQ(tr: str):
+    result = tr.split('/')[0]
+    return result
