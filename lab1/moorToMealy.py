@@ -45,9 +45,9 @@ def moore_to_mealy(input_file, output_file):
             if k in range(0, 1): continue
             else:
                 s = mealy_mass[ch][i]
-                if s not in graph: graph[getQ(s)] = Ptr(getQ(s))
-                graph[new_point].next[getQ(s)] = graph[getQ(s)]
-                graph[getQ(s)].prev[new_point] = graph[new_point]
+                if s not in graph: graph[get_q(s)] = Ptr(get_q(s))
+                graph[new_point].next[get_q(s)] = graph[get_q(s)]
+                graph[get_q(s)].prev[new_point] = graph[new_point]
 
     has_unreach = True
     while has_unreach:
@@ -116,6 +116,6 @@ def get_moore_mass(lines):
                 reachable_points[item] = ""
     return mass
 
-def getQ(tr: str):
+def get_q(tr: str):
     result = tr.split('/')[0]
     return result
