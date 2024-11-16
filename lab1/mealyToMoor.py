@@ -80,7 +80,7 @@ def mealy_to_moore(input_file, output_file):
         has_unreach = False
         new_graph = dict()
         for i, ptr in enumerate(graph):
-            if ptr != moore_mass[NAME_NEW_POINTS][0] and len(graph[ptr].prev) == 0:
+            if ptr != moore_mass[NAME_NEW_POINTS][0] and is_all_prev_not_valid(graph[ptr].prev, ptr):
                 has_unreach = True
                 for b, nextPtr in enumerate(graph[ptr].next):
                     del graph[nextPtr].prev[ptr]
@@ -164,3 +164,7 @@ def get_input_characters_with_transitions(mass):
 def key_is_system_ch(key):
     if key in [NAME_NEW_POINTS, NAME_OUTPUT_CH, NAME_POINTS]: return True
     else: return False
+
+def is_all_prev_not_valid(prevs, q):
+    if len(prevs) == 0 or len(prevs) == 1 and q in prevs: return True
+    return False

@@ -10,7 +10,7 @@ COMMAND_MOORE = "moore"
 # program mealy-to-moore mealy.csv moore.csv
 def main(args):
     command = COMMAND_MEALY #args[0]
-    input_file_name = "1_mealy.csv" #args[1]
+    input_file_name = "1mea.csv" #args[1]
     output_file_name = "mealy_min.csv" #args[2]
     input_file = open(input_file_name, "r")
     output_file = open(output_file_name, "w")

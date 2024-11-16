@@ -45,7 +45,7 @@ def moore_to_mealy(input_file, output_file):
             if k in range(0, 1): continue
             else:
                 s = mealy_mass[ch][i]
-                if s not in graph: graph[get_q(s)] = Ptr(get_q(s))
+                if get_q(s) not in graph: graph[get_q(s)] = Ptr(get_q(s))
                 graph[new_point].next[get_q(s)] = graph[get_q(s)]
                 graph[get_q(s)].prev[new_point] = graph[new_point]
 
@@ -54,7 +54,7 @@ def moore_to_mealy(input_file, output_file):
         has_unreach = False
         new_graph = dict()
         for i, ptr in enumerate(graph):
-            if ptr != mealy_mass[NAME_POINTS][0] and len(graph[ptr].prev) == 0:
+            if ptr != mealy_mass[NAME_POINTS][0] and is_all_prev_not_valid(graph[ptr].prev, ptr):
                 has_unreach = True
                 for b, nextPtr in enumerate(graph[ptr].next):
                     del graph[nextPtr].prev[ptr]
@@ -119,3 +119,7 @@ def get_moore_mass(lines):
 def get_q(tr: str):
     result = tr.split('/')[0]
     return result
+
+def is_all_prev_not_valid(prevs, q):
+    if len(prevs) == 0 or len(prevs) == 1 and q in prevs: return True
+    return False

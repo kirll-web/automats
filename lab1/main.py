@@ -10,9 +10,15 @@ COMMAND_MOORE_TO_MEALY = "moore-to-mealy"
 # program mealy-to-moore mealy.csv moore.csv
 
 def main(args):
-    command = args[0] #COMMAND_MOORE_TO_MEALY
-    input_file_name = args[1]#  "5moo.csv"
-    output_file_name = args[2]#  "5mea.csv"
+    #command = args[0]
+    #command = COMMAND_MEALY_TO_MOORE  # args[0]
+    command = COMMAND_MOORE_TO_MEALY  # args[0]
+    # input_file_name = args[1]
+    # output_file_name = args[2]
+    input_file_name = "6moo.csv" #moore to mealy
+    output_file_name = "6mea.csv"  #moore to mealy
+    #input_file_name = "4mea.csv"  # mealy to moore
+    #output_file_name = "4moo.csv"  # mealy to moore
     input_file = open(input_file_name, "r")
     output_file = open(output_file_name, "w")
     if command == COMMAND_MEALY_TO_MOORE:
