@@ -1,6 +1,3 @@
-from distutils.command.config import config
-from operator import truediv
-
 NAME_POINTS = "Q"
 NAME_NEW_POINTS = "S"
 NAME_OUTPUT_CH = "Y"
