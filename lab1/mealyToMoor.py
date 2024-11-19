@@ -155,7 +155,7 @@ def get_input_characters_with_transitions(mass):
             transitions[transition[0]][transition[1]] = ""
 
     for k, transition in enumerate(transitions):
-        transitions[transition] = sorted(transitions[transition])
+        transitions[transition] = transitions[transition]
     return [input_characters, transitions]
 
 def key_is_system_ch(key):
