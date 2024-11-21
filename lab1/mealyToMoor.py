@@ -20,7 +20,6 @@ def mealy_to_moore(input_file, output_file):
     mealy_mass = get_mealy_mass(lines)
     input_characters, transitions = get_input_characters_with_transitions(mealy_mass)
     offset = 4
-
     moore_mass = dict()
 
     moore_mass[NAME_TRANSITION] = []
@@ -35,7 +34,8 @@ def mealy_to_moore(input_file, output_file):
                 moore_mass[NAME_TRANSITION].append([q, t])
                 moore_mass[NAME_POINTS].append(q)
                 moore_mass[NAME_OUTPUT_CH].append(t)
-                moore_mass[NAME_NEW_POINTS].append("R" + str(count))
+                if count == 0: moore_mass[NAME_NEW_POINTS].append(q)
+                else: moore_mass[NAME_NEW_POINTS].append("R" + str(count))
                 count += 1
 
     for i, ch in enumerate(input_characters):
@@ -45,13 +45,12 @@ def mealy_to_moore(input_file, output_file):
         for k, _ in enumerate(moore_mass[NAME_TRANSITION]):
             moore_q = moore_mass[NAME_POINTS][k]
             moore_input_ch = line
-            index = moore_mass[NAME_TRANSITION].index(
-                get_q(
+            gq = get_q(
                     mealy_mass=mealy_mass,
                     moore_q=moore_q,
                     moore_input_ch=moore_input_ch
                 )
-            )
+            index = moore_mass[NAME_TRANSITION].index(gq)
             new_tr = moore_mass[NAME_NEW_POINTS][index]
             moore_mass[line].append(new_tr)
 
@@ -86,6 +85,12 @@ def mealy_to_moore(input_file, output_file):
 
 
 
+    start_q_has_prevs = False
+
+    st = list(graph)[0]
+    if not(len(graph[st].prev) == 1 and graph[st].value in graph[st].prev) and len(graph[st].prev) > 0:
+        start_q_has_prevs = True
+
     new_moore_mass = dict()
     new_moore_mass[NAME_TRANSITION] = []
     new_moore_mass[NAME_POINTS] = []
@@ -109,6 +114,8 @@ def mealy_to_moore(input_file, output_file):
         count_separator = 0
         for k, ch in enumerate(moore_mass[line]):
             if line == NAME_OUTPUT_CH or line == NAME_NEW_POINTS:
+                if k == 0 and not start_q_has_prevs and line == NAME_OUTPUT_CH:
+                    ch = ""
                 output_file.write(ch)
                 count_separator += 1
                 if count_separator < len(moore_mass[NAME_NEW_POINTS]):
