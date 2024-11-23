@@ -83,39 +83,11 @@ def mealy_to_moore(input_file, output_file):
             else: new_graph[ptr] = graph[ptr]
         graph = new_graph
 
-
-
-    start_q_has_prevs = False
-
-    st = list(graph)[0]
-    if not(len(graph[st].prev) == 1 and graph[st].value in graph[st].prev) and len(graph[st].prev) > 0:
-        start_q_has_prevs = True
-
-
-
-
     new_moore_mass = dict()
     new_moore_mass[NAME_TRANSITION] = []
     new_moore_mass[NAME_POINTS] = []
     new_moore_mass[NAME_OUTPUT_CH] = []
     new_moore_mass[NAME_NEW_POINTS] = []
-    if not start_q_has_prevs:
-        for k, line in enumerate(moore_mass):
-            if line == NAME_TRANSITION:
-                new_moore_mass[line].append(["", ""])
-                continue
-            if line == NAME_POINTS:
-                new_moore_mass[line].append(NAME_NEW_POINTS + str(len(moore_mass[NAME_NEW_POINTS]) + 20))
-                continue
-            if line == NAME_OUTPUT_CH:
-                new_moore_mass[line].append("")
-                continue
-            if line == NAME_NEW_POINTS:
-                new_moore_mass[line].append(NAME_NEW_POINTS + str(len(moore_mass[NAME_NEW_POINTS]) + 20))
-                continue
-            else:
-                if line not in new_moore_mass: new_moore_mass[line] = list()
-                new_moore_mass[line].append(moore_mass[NAME_NEW_POINTS][0])
     for i, ch in enumerate(moore_mass[NAME_NEW_POINTS]):
         if ch not in graph: continue
         for k, line in enumerate(moore_mass):
@@ -179,9 +151,20 @@ def get_input_characters_with_transitions(mass):
                 transitions[transition[0]] = dict()
             transitions[transition[0]][transition[1]] = ""
 
+    new_transitions = dict()
+
+    first_q = mass[NAME_POINTS][0]
+
+    if first_q not in transitions:
+        new_transitions[first_q] = dict()
+        new_transitions[first_q][""] = ""
+
+
     for k, transition in enumerate(transitions):
-        transitions[transition] = transitions[transition]
-    return [input_characters, transitions]
+        new_transitions[transition] = dict()
+        new_transitions[transition] = transitions[transition]
+
+    return [input_characters, new_transitions]
 
 def key_is_system_ch(key):
     if key in [NAME_NEW_POINTS, NAME_OUTPUT_CH, NAME_POINTS]: return True
