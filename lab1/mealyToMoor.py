@@ -91,11 +91,31 @@ def mealy_to_moore(input_file, output_file):
     if not(len(graph[st].prev) == 1 and graph[st].value in graph[st].prev) and len(graph[st].prev) > 0:
         start_q_has_prevs = True
 
+
+
+
     new_moore_mass = dict()
     new_moore_mass[NAME_TRANSITION] = []
     new_moore_mass[NAME_POINTS] = []
     new_moore_mass[NAME_OUTPUT_CH] = []
     new_moore_mass[NAME_NEW_POINTS] = []
+    if not start_q_has_prevs:
+        for k, line in enumerate(moore_mass):
+            if line == NAME_TRANSITION:
+                new_moore_mass[line].append(["", ""])
+                continue
+            if line == NAME_POINTS:
+                new_moore_mass[line].append(NAME_NEW_POINTS + str(len(moore_mass[NAME_NEW_POINTS]) + 20))
+                continue
+            if line == NAME_OUTPUT_CH:
+                new_moore_mass[line].append("")
+                continue
+            if line == NAME_NEW_POINTS:
+                new_moore_mass[line].append(NAME_NEW_POINTS + str(len(moore_mass[NAME_NEW_POINTS]) + 20))
+                continue
+            else:
+                if line not in new_moore_mass: new_moore_mass[line] = list()
+                new_moore_mass[line].append(moore_mass[NAME_NEW_POINTS][0])
     for i, ch in enumerate(moore_mass[NAME_NEW_POINTS]):
         if ch not in graph: continue
         for k, line in enumerate(moore_mass):
@@ -114,8 +134,6 @@ def mealy_to_moore(input_file, output_file):
         count_separator = 0
         for k, ch in enumerate(moore_mass[line]):
             if line == NAME_OUTPUT_CH or line == NAME_NEW_POINTS:
-                if k == 0 and not start_q_has_prevs and line == NAME_OUTPUT_CH:
-                    ch = ""
                 output_file.write(ch)
                 count_separator += 1
                 if count_separator < len(moore_mass[NAME_NEW_POINTS]):
