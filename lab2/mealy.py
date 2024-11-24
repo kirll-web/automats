@@ -133,8 +133,9 @@ def get_finish_map_classes(mealy_mass, g_map):
         new_g_map = create_g_map(map_classes)
         new_map_classes = get_map_classes(mealy_mass, new_g_map)
         if len(map_classes) == len(new_map_classes):
-            map_classes = new_map_classes
             find_finish = True
+        map_classes = new_map_classes
+
 
     return map_classes
 
