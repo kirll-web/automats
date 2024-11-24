@@ -32,7 +32,7 @@ def remove_unreacheble_state(mealy_mass):
                 continue
             else:
                 s = mealy_mass[ch][i]
-                if s[0] not in graph: graph[s] = Ptr(s[0])
+                if s[0] not in graph: graph[s[0]] = Ptr(s[0])
                 graph[new_point].next[s[0]] = graph[s[0]]
                 graph[s[0]].prev[new_point] = graph[new_point]
 
@@ -41,7 +41,7 @@ def remove_unreacheble_state(mealy_mass):
         has_unreach = False
         new_graph = dict()
         for i, ptr in enumerate(graph):
-            if ptr != mealy_mass[NAME_POINTS][0] and len(graph[ptr].prev) == 0:
+            if ptr != mealy_mass[NAME_POINTS][0] and is_all_prev_not_valid(graph[ptr].prev, ptr):
                 has_unreach = True
                 for b, nextPtr in enumerate(graph[ptr].next):
                     del graph[nextPtr].prev[ptr]
@@ -178,3 +178,7 @@ def minimize_mealy_mass(mealy_mass):
                 min_mealy_mass[line].append(c)
 
     return min_mealy_mass
+
+def is_all_prev_not_valid(prevs, q):
+    if len(prevs) == 0 or len(prevs) == 1 and q in prevs: return True
+    return False
