@@ -127,9 +127,8 @@ def get_map_classes(mealy_mass, g_map):
 
 def get_finish_map_classes(mealy_mass, g_map):
     find_finish = False
-    map_classes = dict()
+    map_classes = get_map_classes(mealy_mass, g_map)
     while not find_finish:
-        map_classes = get_map_classes(mealy_mass, g_map)
         new_g_map = create_g_map(map_classes)
         new_map_classes = get_map_classes(mealy_mass, new_g_map)
         if len(map_classes) == len(new_map_classes):
