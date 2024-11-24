@@ -4,7 +4,7 @@ NAME_CLASS = "CLASS"
 NAME_UNDERCLASS = "UNDERCLASS"
 TAG_CLASS_A = "A"
 TAG_CLASS_C = "C"
-
+visited = set()
 class Ptr:
     def __init__(self, value):
         self.value: str = value
@@ -19,7 +19,7 @@ def mealy_transform_to_min(input_file, output_file):
     print_mealy(min_mealy_mass, output_file)
 
 
-visited = set()
+
 def remove_unreacheble_state(mealy_mass):
     graph = dict()
 
@@ -40,6 +40,7 @@ def remove_unreacheble_state(mealy_mass):
     for i, item in enumerate(graph):
         first_q = graph[item]
         break
+    visited.add(first_q.value)
     dfs(first_q)
 
     new_mealy_mass = dict()
@@ -54,10 +55,12 @@ def remove_unreacheble_state(mealy_mass):
 
 
 def dfs(node: Ptr):
+    v = visited
     for item in node.next:
+        ptr = node.next[item]
         if item not in visited:
-            visited.add(item)
-            dfs(node.next[item])
+            visited.add(ptr.value)
+            dfs(ptr)
 
 
 
