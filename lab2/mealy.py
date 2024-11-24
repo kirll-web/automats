@@ -16,7 +16,6 @@ def mealy_transform_to_min(input_file, output_file):
     mealy_mass = get_mealy_mass(input_file)
     mealy_mass = remove_unreacheble_state(mealy_mass)
     min_mealy_mass = minimize_mealy_mass(mealy_mass)
-    min_mealy_mass = remove_unreacheble_state(min_mealy_mass)
     print_mealy(min_mealy_mass, output_file)
 
 
