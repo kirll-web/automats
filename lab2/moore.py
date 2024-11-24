@@ -57,9 +57,11 @@ def remove_unreacheble_state(moore_mass):
         graph = new_graph
 
     first_q: Ptr
+
     for i, item in enumerate(graph):
         first_q = graph[item]
         break
+    visited.add(first_q.value)
     dfs(first_q)
 
     new_moore_mass = dict()
@@ -119,14 +121,13 @@ def minimize_moore_mass(moore_mass):
 
 def get_finish_map_classes(moore_mass, g_map):
     find_finish = False
-    map_classes = dict()
+    map_classes = get_map_classes(moore_mass, g_map)
     while not find_finish:
-        map_classes = get_map_classes(moore_mass, g_map)
         new_g_map = create_g_map(map_classes)
         new_map_classes = get_map_classes(moore_mass, new_g_map)
         if len(map_classes) == len(new_map_classes):
-            map_classes = new_map_classes
             find_finish = True
+        map_classes = new_map_classes
 
     return map_classes
 

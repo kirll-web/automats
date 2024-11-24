@@ -55,7 +55,6 @@ def remove_unreacheble_state(mealy_mass):
 
 
 def dfs(node: Ptr):
-    v = visited
     for item in node.next:
         ptr = node.next[item]
         if item not in visited:
