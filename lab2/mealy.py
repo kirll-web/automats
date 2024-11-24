@@ -16,9 +16,11 @@ def mealy_transform_to_min(input_file, output_file):
     mealy_mass = get_mealy_mass(input_file)
     mealy_mass = remove_unreacheble_state(mealy_mass)
     min_mealy_mass = minimize_mealy_mass(mealy_mass)
+    min_mealy_mass = remove_unreacheble_state(min_mealy_mass)
     print_mealy(min_mealy_mass, output_file)
 
 
+visited = set()
 def remove_unreacheble_state(mealy_mass):
     graph = dict()
 
@@ -35,28 +37,29 @@ def remove_unreacheble_state(mealy_mass):
                 graph[new_point].next[s[0]] = graph[s[0]]
                 graph[s[0]].prev[new_point] = graph[new_point]
 
-    has_unreach = True
-    while has_unreach:
-        has_unreach = False
-        new_graph = dict()
-        for i, ptr in enumerate(graph):
-            if ptr != mealy_mass[NAME_POINTS][0] and is_all_prev_not_valid(graph[ptr].prev, ptr):
-                has_unreach = True
-                for b, nextPtr in enumerate(graph[ptr].next):
-                    del graph[nextPtr].prev[ptr]
-            else:
-                new_graph[ptr] = graph[ptr]
-        graph = new_graph
+    first_q:Ptr
+    for i, item in enumerate(graph):
+        first_q = graph[item]
+        break
+    dfs(first_q)
 
     new_mealy_mass = dict()
     new_mealy_mass[NAME_POINTS] = []
     for i, ch in enumerate(mealy_mass[NAME_POINTS]):
-        if ch not in graph: continue
+        if ch not in visited: continue
         for k, line in enumerate(mealy_mass):
             if line not in new_mealy_mass: new_mealy_mass[line] = list()
             new_mealy_mass[line].append(mealy_mass[line][i])
 
-    return  new_mealy_mass
+    return new_mealy_mass
+
+
+def dfs(node: Ptr):
+    for item in node.next:
+        if item not in visited:
+            visited.add(item)
+            dfs(node.next[item])
+
 
 
 def get_mealy_mass(input_file):

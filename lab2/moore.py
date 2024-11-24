@@ -26,6 +26,7 @@ def moore_transform_to_min(input_file, output_file):
 
     print_moore(moore_mass, output_file)
 
+visited = set()
 def remove_unreacheble_state(moore_mass):
     graph = dict()
 
@@ -55,6 +56,12 @@ def remove_unreacheble_state(moore_mass):
                 new_graph[ptr] = graph[ptr]
         graph = new_graph
 
+    first_q: Ptr
+    for i, item in enumerate(graph):
+        first_q = graph[item]
+        break
+    dfs(first_q)
+
     new_moore_mass = dict()
     new_moore_mass[NAME_OUTPUT_CH] = []
     new_moore_mass[NAME_POINTS] = []
@@ -65,6 +72,12 @@ def remove_unreacheble_state(moore_mass):
             new_moore_mass[line].append(moore_mass[line][i])
 
     return  new_moore_mass
+
+def dfs(node: Ptr):
+    for item in node.next:
+        if item not in visited:
+            visited.add(item)
+            dfs(node.next[item])
 
 def minimize_moore_mass(moore_mass):
     map_classes = dict()
