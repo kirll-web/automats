@@ -119,7 +119,7 @@ def get_map_classes(mealy_mass, g_map):
         for line_index, ch_line in enumerate(new_mealy_mass):
             if ch_line == NAME_POINTS: continue
             transition = new_mealy_mass[ch_line][column_index]
-            line += f"{transition};"
+            line += f"{transition}/{mealy_mass[ch_line][column_index][1]};"
         if line not in map_classes: map_classes[line] = dict()
         map_classes[line][point] = ""
 
