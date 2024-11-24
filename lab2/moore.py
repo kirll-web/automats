@@ -43,18 +43,6 @@ def remove_unreacheble_state(moore_mass):
                 graph[new_point].next[s] = graph[s]
                 graph[s].prev[new_point] = graph[new_point]
 
-    has_unreach = True
-    while has_unreach:
-        has_unreach = False
-        new_graph = dict()
-        for i, ptr in enumerate(graph):
-            if ptr != moore_mass[NAME_POINTS][0] and is_all_prev_not_valid(graph[ptr].prev, ptr):
-                has_unreach = True
-                for b, nextPtr in enumerate(graph[ptr].next):
-                    del graph[nextPtr].prev[ptr]
-            else:
-                new_graph[ptr] = graph[ptr]
-        graph = new_graph
 
     first_q: Ptr
 
@@ -68,7 +56,7 @@ def remove_unreacheble_state(moore_mass):
     new_moore_mass[NAME_OUTPUT_CH] = []
     new_moore_mass[NAME_POINTS] = []
     for i, ch in enumerate(moore_mass[NAME_POINTS]):
-        if ch not in graph: continue
+        if ch not in visited: continue
         for k, line in enumerate(moore_mass):
             if line not in new_moore_mass: new_moore_mass[line] = list()
             new_moore_mass[line].append(moore_mass[line][i])
