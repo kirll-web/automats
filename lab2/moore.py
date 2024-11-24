@@ -1,8 +1,12 @@
 NAME_POINTS = "Q"
+NAME_OUTPUT_CH = "Y"
+NUMBER_OUTPUT_CH = 0
+NUMBER_POINTS = 1
 SEPARATOR = ";"
 NAME_CLASS = "CLASS"
 NAME_UNDERCLASS = "UNDERCLASS"
 TAG_CLASS = "C"
+
 
 class Ptr:
     def __init__(self, value):
@@ -13,48 +17,37 @@ class Ptr:
 
 def moore_transform_to_min(input_file, output_file):
     lines = input_file.readlines()
-    mealy_mass = get_mealy_mass(lines)
-    mealy_mass = remove_unreacheble_state(mealy_mass)
-    map_classes = dict()
-
-    for index, ch_line in enumerate(mealy_mass):
-        if ch_line == NAME_POINTS: continue
-        column = mealy_mass[ch_line]
+    moore_mass = get_moore_mass(lines)
+    moore_mass = remove_unreacheble_state(moore_mass)
+    moore_mass = minimize_moore_mass(moore_mass)
 
 
 
 
-    print_mealy(mealy_mass, output_file)
+    print_moore(moore_mass, output_file)
 
-
-def the_first_division_into_classes(mealy_mass):
-    for index, line in enumerate(mealy_mass):
-        if line == NAME_POINTS: continue
-        #for index2, line in enumerate(mealy_mass):
-
-
-def remove_unreacheble_state(mealy_mass):
+def remove_unreacheble_state(moore_mass):
     graph = dict()
 
-    for i, ch in enumerate(mealy_mass[NAME_POINTS]):
+    for i, ch in enumerate(moore_mass[NAME_POINTS]):
         graph[ch] = Ptr(ch)
 
-    for i, new_point in enumerate(mealy_mass[NAME_POINTS]):
-        for k, ch in enumerate(mealy_mass):
+    for i, new_point in enumerate(moore_mass[NAME_POINTS]):
+        for k, ch in enumerate(moore_mass):
             if k in range(0, 1):
                 continue
             else:
-                s = mealy_mass[ch][i]
-                if s[0] not in graph: graph[s] = Ptr(s[0])
-                graph[new_point].next[s[0]] = graph[s[0]]
-                graph[s[0]].prev[new_point] = graph[new_point]
+                s = moore_mass[ch][i]
+                if s not in graph: graph[s] = Ptr(s)
+                graph[new_point].next[s] = graph[s]
+                graph[s].prev[new_point] = graph[new_point]
 
     has_unreach = True
     while has_unreach:
         has_unreach = False
         new_graph = dict()
         for i, ptr in enumerate(graph):
-            if ptr != mealy_mass[NAME_POINTS][0] and len(graph[ptr].prev) == 0:
+            if ptr != moore_mass[NAME_POINTS][0] and is_all_prev_not_valid(graph[ptr].prev, ptr):
                 has_unreach = True
                 for b, nextPtr in enumerate(graph[ptr].next):
                     del graph[nextPtr].prev[ptr]
@@ -62,48 +55,147 @@ def remove_unreacheble_state(mealy_mass):
                 new_graph[ptr] = graph[ptr]
         graph = new_graph
 
-    new_mealy_mass = dict()
-    new_mealy_mass[NAME_POINTS] = []
-    for i, ch in enumerate(mealy_mass[NAME_POINTS]):
+    new_moore_mass = dict()
+    new_moore_mass[NAME_OUTPUT_CH] = []
+    new_moore_mass[NAME_POINTS] = []
+    for i, ch in enumerate(moore_mass[NAME_POINTS]):
         if ch not in graph: continue
-        for k, line in enumerate(mealy_mass):
-            if line not in new_mealy_mass: new_mealy_mass[line] = list()
-            new_mealy_mass[line].append(mealy_mass[line][i])
+        for k, line in enumerate(moore_mass):
+            if line not in new_moore_mass: new_moore_mass[line] = list()
+            new_moore_mass[line].append(moore_mass[line][i])
 
-    return  new_mealy_mass
+    return  new_moore_mass
+
+def minimize_moore_mass(moore_mass):
+    map_classes = dict()
+    for column_index, output_ch in enumerate(moore_mass[NAME_OUTPUT_CH]):
+        if output_ch not in map_classes: map_classes[output_ch] = dict()
+        map_classes[output_ch][moore_mass[NAME_POINTS][column_index]] = ""
+
+    g_map = create_g_map(map_classes)
+
+    map_classes = get_finish_map_classes(moore_mass, g_map)
+
+    g_map = create_g_map(map_classes)
+
+    g_map_classes = dict()
+    for index, line in enumerate(map_classes):
+        clazz = f"{TAG_CLASS}{index}"
+        for q in map_classes[line]:
+            if clazz not in g_map_classes: g_map_classes[clazz] = []
+            g_map_classes[clazz].append(q)
+
+    min_moore_mass = dict()
+    min_moore_mass[NAME_OUTPUT_CH] = []
+    min_moore_mass[NAME_POINTS] = []
+    for g_q in g_map_classes:
+        min_moore_mass[NAME_POINTS].append(g_q)
+        first_q = g_map_classes[g_q][0]
+        min_moore_mass[NAME_OUTPUT_CH].append(moore_mass[NAME_OUTPUT_CH][moore_mass[NAME_POINTS].index(first_q)])
+
+        for index, line in enumerate(moore_mass):
+            for kIndex, p in enumerate(moore_mass[line]):
+                if line == NAME_POINTS or line == NAME_OUTPUT_CH: continue
+                if moore_mass[NAME_POINTS][kIndex] != first_q: continue
+                if line not in min_moore_mass: min_moore_mass[line] = []
+                c = g_map[p]
+                min_moore_mass[line].append(c)
 
 
-def get_mealy_mass(lines):
+    return min_moore_mass
+
+def get_finish_map_classes(moore_mass, g_map):
+    find_finish = False
+    map_classes = dict()
+    while not find_finish:
+        map_classes = get_map_classes(moore_mass, g_map)
+        new_g_map = create_g_map(map_classes)
+        new_map_classes = get_map_classes(moore_mass, new_g_map)
+        if len(map_classes) == len(new_map_classes):
+            map_classes = new_map_classes
+            find_finish = True
+
+    return map_classes
+
+def get_map_classes(moore_mass, g_map):
+    new_moore_mass = dict()
+    new_moore_mass[NAME_OUTPUT_CH] = []
+    new_moore_mass[NAME_POINTS] = []
+    for index, line in enumerate(moore_mass):
+        for kIndex, p in enumerate(moore_mass[line]):
+            if line == NAME_OUTPUT_CH:
+                new_moore_mass[NAME_OUTPUT_CH].append(p)
+                continue
+            if line == NAME_POINTS:
+                new_moore_mass[NAME_POINTS].append(p)
+                continue
+            if line not in new_moore_mass: new_moore_mass[line] = []
+            new_moore_mass[line].append(g_map[p])
+    map_classes = dict()
+    for column_index, point in enumerate(new_moore_mass[NAME_POINTS]):
+        line = ""
+        for line_index, ch_line in enumerate(new_moore_mass):
+            if ch_line == NAME_POINTS: continue
+            transition = new_moore_mass[ch_line][column_index]
+            line += f"{transition};"
+        if line not in map_classes: map_classes[line] = dict()
+        map_classes[line][point] = ""
+    return map_classes
+
+def create_g_map(map_classes):
+    g_map = dict()
+    for index, line in enumerate(map_classes):
+        clazz = f"{TAG_CLASS}{index}"
+        for q in map_classes[line]:
+            g_map[q] = clazz
+    return g_map
+
+def get_moore_mass(lines):
     mass = dict()
-    mass[NAME_POINTS] = []
-    temp = lines[0].strip().split(SEPARATOR)
+    output_ch_line = lines[NUMBER_OUTPUT_CH]
+    points_line = lines[NUMBER_POINTS]
+
+    temp = output_ch_line.strip().split(SEPARATOR)
+    mass[NAME_OUTPUT_CH] = []
     for i, item in enumerate(temp):
-        if item != "": mass[NAME_POINTS].append(item)
+        if i != 0:
+            mass[NAME_OUTPUT_CH].append(item)
+
+    temp = points_line.strip().split(SEPARATOR)
+    mass[NAME_POINTS] = []
+    for i, item in enumerate(temp):
+        if item != "":
+            mass[NAME_POINTS].append(item)
 
     for i, line in enumerate(lines):
-        if i == 0: continue
+        if i in range(0, 2): continue
         temp = line.strip().split(SEPARATOR)
-        for k, t in enumerate(temp):
-            if i > 0 and k > 0:
-                temp[k] = t.strip().split("/")
-            else: temp[k] = t
         mass[temp[0]] = []
-        mass[temp[0]] = temp[1:]
+        for k, item in enumerate(temp):
+            if k != 0:
+                mass[temp[0]].append(item)
     return mass
 
-def print_mealy(mealy_mass, output_file):
-    for i, line in enumerate(mealy_mass):
-        if line == NAME_POINTS:
-            output_file.write(";")
+def print_moore(moore_mass, output_file):
+    for i, line in enumerate(moore_mass):
+        if i in range(0, 2): output_file.write(SEPARATOR)
         else:
-            output_file.write(f"{line};")
-        for k, ch in enumerate(mealy_mass[line]):
-            if line == NAME_POINTS:
+            output_file.write(line)
+            output_file.write(SEPARATOR)
+        count_separator = 0
+        for k, ch in enumerate(moore_mass[line]):
+            if line == NAME_OUTPUT_CH or line == NAME_POINTS:
                 output_file.write(ch)
-                if k < len(mealy_mass[line]) - 1:
+                count_separator += 1
+                if count_separator < len(moore_mass[NAME_POINTS]):
                     output_file.write(SEPARATOR)
                 continue
-            output_file.write(f"${ch[0]}/${ch[1]}")
-            if k < len(mealy_mass[line]) - 1:
+            output_file.write(ch)
+            count_separator += 1
+            if count_separator < len(moore_mass[NAME_POINTS]):
                 output_file.write(SEPARATOR)
         output_file.write("\n")
+
+def is_all_prev_not_valid(prevs, q):
+    if len(prevs) == 0 or len(prevs) == 1 and q in prevs: return True
+    return False
