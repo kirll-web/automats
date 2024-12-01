@@ -86,7 +86,7 @@ def prepare_left_grammar(grammar, output_file):
                 if matrix[ch][new_index] == EMPTY_TRS:
                     matrix[ch][new_index] = in_state
                 else:
-                    matrix[ch][new_index] = f"{matrix[ch][new_index]}, {in_state}"
+                    matrix[ch][new_index] = f"{matrix[ch][new_index]},{in_state}"
 
             else:
                 ch = transition[1]
@@ -146,7 +146,7 @@ def prepare_right_grammar(grammar, output_file):
                         matrix[ch].append(EMPTY_TRS)
 
                 if matrix[ch][index] == EMPTY_TRS: matrix[ch][index] = state
-                else: matrix[ch][index] = f"{matrix[ch][index]}, {state}"
+                else: matrix[ch][index] = f"{matrix[ch][index]},{state}"
 
             else:
                 ch = transition[0]
@@ -183,8 +183,8 @@ def prepare_right_grammar(grammar, output_file):
 def main(args):
     input_file_name = args[0]
     output_file_name = args[1]
-    # input_file_name = "left.txt"
-    # output_file_name = "output.csv"
+    #input_file_name = "right.txt"
+    #output_file_name = "output.csv"
     input_file = open(input_file_name, "r",  encoding="utf-8")
     output_file = open(output_file_name, "w+", encoding="utf-8")
 
