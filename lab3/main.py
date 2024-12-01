@@ -44,14 +44,11 @@ def read_grammar(input_file):
 
     grammar = dict()
 
-    find_left = False
 
     for i, rule in enumerate(rules):
         matches = re.findall(RIGHT, rule)
         if not matches:
-            if not find_left:
-                is_left = True
-                find_left = True
+            is_left = True
             matches = re.findall(LEFT, rule)
         name = matches[0][0]
         grammar[name] = []
