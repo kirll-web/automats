@@ -181,8 +181,8 @@ def prepare_right_grammar(grammar, output_file):
 
 
 def main(args):
-    input_file_name = args[1]
-    output_file_name = args[2]
+    input_file_name = args[0]
+    output_file_name = args[1]
     # input_file_name = "left.txt"
     # output_file_name = "output.csv"
     input_file = open(input_file_name, "r",  encoding="utf-8")
