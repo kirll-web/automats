@@ -1,5 +1,7 @@
 import sys
 
+from moore import moore_transform_to_min
+
 LINE_END = "LINE_END"
 LINE_STATES = "LINE_STATES"
 LINE_CH = "LINE_CH"
@@ -153,37 +155,42 @@ def determinate(nfa_automat, output_file):
                     print(f";{c}", end="")
                 print()
 
+
+    temp_file = open("temp.csv", "w+", encoding="utf-8")
     for i, b in enumerate(rewrite_table):
         if b == LINE_END:
-            output_file.write(";")
+            temp_file.write(";")
             for k, c in enumerate(rewrite_table[b]):
-                output_file.write(c)
-            output_file.write("\n")
+                temp_file.write(c)
+            temp_file.write("\n")
         else:
             if b == LINE_STATES:
                 for k, c in enumerate(rewrite_table[b]):
-                    output_file.write(f";{rewrite_table[b][c]}")
-                output_file.write("\n")
+                    temp_file.write(f";{rewrite_table[b][c]}")
+                temp_file.write("\n")
             else:
-                output_file.write(b)
+                temp_file.write(b)
                 for k, c in enumerate(rewrite_table[b]):
-                    output_file.write(f";{c}")
-                output_file.write("\n")
+                    temp_file.write(f";{c}")
+                temp_file.write("\n")
 
+    temp_file.close()
+    temp_file =  open("temp.csv", "r", encoding="utf-8")
+    moore_transform_to_min(temp_file, output_file)
 
     
 
 def main(args):
-    input_file_name = args[0]
-    output_file_name = args[1]
-    #input_file_name = "1.csv"
-    #output_file_name = "output.csv"
+    #input_file_name = args[0]
+    #output_file_name = args[1]
+    input_file_name = "3.csv"
+    output_file_name = "output.csv"
     input_file = open(input_file_name, "r",  encoding="utf-8")
     output_file = open(output_file_name, "w+", encoding="utf-8")
 
     nfa_automat = read_nfa(input_file)
 
-    determinate(nfa_automat, output_file)
+    determinate(nfa_automat, output_file_name)
 
     output_file.close()
 
