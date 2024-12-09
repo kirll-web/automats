@@ -98,11 +98,17 @@ def determinate(nfa_automat, output_file):
                 table[item].append("") #заполнение массива пустыми массивами == количеству LINE_CH
             qs = item.split(Q_SEPARATOR)
             if len(qs) > 1:
+                new_qs = qs.copy()
                 for q in qs:
+                    if q in empty_transitions and len(empty_transitions[q]) > 1:
+                        for b in empty_transitions[q]:
+                            if b != q: new_qs.append(b)
+                qs = new_qs
+                for q in qs:
+
                     for kindex, ch in enumerate(table[LINE_CH]):
                         if ch == EMPTY_CH: continue
-                        c = ch
-                        tr = nfa_automat[c][nfa_automat[LINE_STATES].index(q)]
+                        tr = nfa_automat[ch][nfa_automat[LINE_STATES].index(q)]
                         if tr != "":
                             new_tr = tr
                             mk = table[item][kindex]
@@ -123,25 +129,31 @@ def determinate(nfa_automat, output_file):
             # find_new_q = True
             # иначе False
             else:
-                q = qs[0]
-                for kindex, ch in enumerate(table[LINE_CH]):
-                    if ch == EMPTY_CH: continue
-                    tr = nfa_automat[ch][nfa_automat[LINE_STATES].index(q)]
-                    if tr != "":
-                        new_tr = tr
-                        mk = table[item][kindex]
-                        if len(mk) > 0:
-                            new_tr = table[item][kindex]
-                            s = table[item][kindex].split(",")
-                            q_in_new_tr = tr.split(",")
-                            for itemK in q_in_new_tr:
-                                if itemK not in s:
-                                    new_tr = f"{new_tr},{itemK}"
-                        table[item][kindex] = new_tr
+                new_qs = qs.copy()
+                for q in qs:
+                    if q in empty_transitions and len(empty_transitions[q]) > 1:
+                        for b in empty_transitions[q]:
+                            if b != q: new_qs.append(b)
+                qs = new_qs
+                for q in qs:
+                    for kindex, ch in enumerate(table[LINE_CH]):
+                        if ch == EMPTY_CH: continue
+                        tr = nfa_automat[ch][nfa_automat[LINE_STATES].index(q)]
+                        if tr != "":
+                            new_tr = tr
+                            mk = table[item][kindex]
+                            if len(mk) > 0:
+                                new_tr = table[item][kindex]
+                                s = table[item][kindex].split(",")
+                                q_in_new_tr = tr.split(",")
+                                for itemK in q_in_new_tr:
+                                    if itemK not in s:
+                                        new_tr = f"{new_tr},{itemK}"
+                            table[item][kindex] = new_tr
 
-                        if new_tr not in finded_q:
-                            new_finded_q[new_tr] = False
-                            find_new_q = True
+                            if new_tr not in finded_q:
+                                new_finded_q[new_tr] = False
+                                find_new_q = True
             new_finded_q[item] = True
         finded_q = new_finded_q
 
