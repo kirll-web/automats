@@ -44,27 +44,29 @@ def read_nfa(input_file):
 def determinate(nfa_automat, output_file):
     empty_transitions = dict()
 
-    for index, ch in enumerate(nfa_automat[LINE_STATES]):
-        empty_transitions[ch] = []
-        empty_transitions[ch].append(ch)
-        empty_tr = nfa_automat[EMPTY_CH][index]
-        if empty_tr != "":
-            empty_tr = empty_tr.split(Q_SEPARATOR)
-            for tr in empty_tr:
-                if tr != "":
-                    if tr not in empty_transitions[ch]: empty_transitions[ch].append(tr)
-                    for i in empty_transitions:
-                        if ch in empty_transitions[i] and tr not in empty_transitions[i]:
-                            empty_transitions[i].append(tr)
+    start_q = nfa_automat[LINE_STATES][0]
+    if EMPTY_CH in nfa_automat:
+        for index, ch in enumerate(nfa_automat[LINE_STATES]):
+            empty_transitions[ch] = []
+            empty_transitions[ch].append(ch)
+            empty_tr = nfa_automat[EMPTY_CH][index]
+            if empty_tr != "":
+                empty_tr = empty_tr.split(Q_SEPARATOR)
+                for tr in empty_tr:
+                    if tr != "":
+                        if tr not in empty_transitions[ch]: empty_transitions[ch].append(tr)
+                        for i in empty_transitions:
+                            if ch in empty_transitions[i] and tr not in empty_transitions[i]:
+                                empty_transitions[i].append(tr)
+        start_q = list(empty_transitions.items())[0][1]
+        start_q = Q_SEPARATOR.join(map(str, start_q))
     table = dict()
     table[LINE_CH] = []
 
     for ch in nfa_automat:
         if ch == LINE_END or ch == LINE_STATES or ch == EMPTY_CH: continue
         table[LINE_CH].append(ch)
-    start_q = list(empty_transitions.items())[0][1]
-    start_q =  Q_SEPARATOR.join(map(str, start_q))
-    print(start_q)
+
     table[start_q] = []
     
     find_new_q = True
@@ -195,10 +197,10 @@ def determinate(nfa_automat, output_file):
     
 
 def main(args):
-    input_file_name = args[0]
-    output_file_name = args[1]
-    #input_file_name = "4.csv"
-    #output_file_name = "output.csv"
+    #input_file_name = args[0]
+    #output_file_name = args[1]
+    input_file_name = "5.csv"
+    output_file_name = "output.csv"
     input_file = open(input_file_name, "r",  encoding="utf-8")
     output_file = open(output_file_name, "w+", encoding="utf-8")
 
