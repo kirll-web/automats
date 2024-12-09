@@ -36,9 +36,16 @@ def remove_unreacheble_state(moore_mass):
                 continue
             else:
                 s = moore_mass[ch][i]
-                if s not in graph: graph[s] = Ptr(s)
-                graph[new_point].next[s] = graph[s]
-                graph[s].prev[new_point] = graph[new_point]
+                if s != "":
+                    temp = s.split(",")
+                    if len(temp) > 1:
+                        for item in temp:
+                            if item not in graph: graph[item] = Ptr(item)
+                            graph[new_point].next[item] = graph[item]
+                            graph[item].prev[new_point] = graph[new_point]
+                    if s not in graph: graph[s] = Ptr(s)
+                    graph[new_point].next[s] = graph[s]
+                    graph[s].prev[new_point] = graph[new_point]
 
 
     first_q: Ptr
@@ -128,6 +135,7 @@ def get_map_classes(moore_mass, g_map):
     for index, line in enumerate(moore_mass):
         for kIndex, p in enumerate(moore_mass[line]):
             if p == "":
+                if line not in new_moore_mass: new_moore_mass[line] = []
                 new_moore_mass[line].append(p)
                 continue
             if line == NAME_OUTPUT_CH:

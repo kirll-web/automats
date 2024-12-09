@@ -39,6 +39,19 @@ def read_nfa(input_file):
                 for i, ch in enumerate(line.strip().split(";")):
                     if i == 0: automat[first_ch] = []
                     else: automat[first_ch].append(ch)
+    automat =  remove_unreacheble_state(automat)
+    new_automat = dict()
+    for line in automat:
+        if line == LINE_END or line == LINE_STATES:
+            new_automat[line] = automat[line]
+            continue
+        delete = True
+        for tr in automat[line]:
+            if tr != "":
+                delete = False
+        if not delete:
+            new_automat[line] = automat[line]
+    automat = new_automat
     return automat
 
 def determinate(nfa_automat, output_file):
@@ -146,12 +159,11 @@ def determinate(nfa_automat, output_file):
         for kindex, q in enumerate(table):
             if q == LINE_CH: continue
             s = table[q][yandex]
-            s = line.split(",")
+            s = s.split(",")
             s.sort()
             s = list(dict.fromkeys(s))
             s = ",".join(s)
-            if s == "": rewrite_table[ch][kindex-1] = s
-            else: rewrite_table[ch][kindex-1] = s
+            rewrite_table[ch][kindex - 1] = s
 
 
     rewrite_table = remove_unreacheble_state(rewrite_table)
@@ -199,7 +211,7 @@ def determinate(nfa_automat, output_file):
 def main(args):
     input_file_name = args[0]
     output_file_name = args[1]
-    #input_file_name = "5.csv"
+    #input_file_name = "6.csv"
     #output_file_name = "output.csv"
     input_file = open(input_file_name, "r",  encoding="utf-8")
     output_file = open(output_file_name, "w+", encoding="utf-8")
