@@ -106,11 +106,12 @@ def determinate(nfa_automat, output_file):
                         if tr != "":
                             new_tr = tr
                             if len(table[item][kindex]) > 0:
+                                new_tr = table[item][kindex]
                                 s = table[item][kindex].split(",")
                                 q_in_new_tr = new_tr.split(",")
                                 for itemK in q_in_new_tr:
                                     if itemK not in s:
-                                        new_tr = f"{table[item][kindex]},{itemK}"
+                                        new_tr = f"{new_tr},{itemK}"
                                 else: new_tr = f"{table[item][kindex]}"
                             table[item][kindex] = new_tr
 
@@ -129,11 +130,12 @@ def determinate(nfa_automat, output_file):
                     if tr != "":
                         new_tr = tr
                         if len(table[item][kindex]) > 0:
+                            new_tr = table[item][kindex]
                             s = table[item][kindex].split(",")
                             q_in_new_tr = new_tr.split(",")
                             for itemK in q_in_new_tr:
                                 if itemK not in s:
-                                    new_tr = f"{table[item][kindex]},{itemK}"
+                                    new_tr = f"{new_tr},{itemK}"
                             else: new_tr = f"{table[item][kindex]}"
                         table[item][kindex] = new_tr
 
@@ -223,8 +225,8 @@ def determinate(nfa_automat, output_file):
 def main(args):
     input_file_name = "8.csv"
     output_file_name = "output.csv"
-    input_file_name = args[0]
-    output_file_name = args[1]
+    #input_file_name = args[0]
+    #output_file_name = args[1]
 
     input_file = open(input_file_name, "r",  encoding="utf-8")
     output_file = open(output_file_name, "w+", encoding="utf-8")
