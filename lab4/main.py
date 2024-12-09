@@ -56,7 +56,7 @@ def read_nfa(input_file):
 
 def determinate(nfa_automat, output_file):
     empty_transitions = dict()
-
+    global end_state
     start_q = nfa_automat[LINE_STATES][0]
     if EMPTY_CH in nfa_automat:
         for index, ch in enumerate(nfa_automat[LINE_STATES]):
@@ -71,6 +71,9 @@ def determinate(nfa_automat, output_file):
                         for i in empty_transitions:
                             if ch in empty_transitions[i] and tr not in empty_transitions[i]:
                                 empty_transitions[i].append(tr)
+        for item in empty_transitions:
+            for item2 in empty_transitions[item]:
+                if item2 in end_state: end_state.append(item)
         start_q = list(empty_transitions.items())[0][1]
         start_q = Q_SEPARATOR.join(map(str, start_q))
     table = dict()
@@ -210,8 +213,8 @@ def determinate(nfa_automat, output_file):
 def main(args):
     input_file_name = "4.csv"
     output_file_name = "output.csv"
-    input_file_name = args[0]
-    output_file_name = args[1]
+    #input_file_name = args[0]
+    #output_file_name = args[1]
 
     input_file = open(input_file_name, "r",  encoding="utf-8")
     output_file = open(output_file_name, "w+", encoding="utf-8")
