@@ -24,7 +24,7 @@ def moore_transform_to_min(input_file, output_file):
     print_moore(moore_mass, output_file)
 
 visited = set()
-def remove_unreacheble_state(moore_mass):
+def remove_unreacheble_state(moore_mass, is_uniq = True):
     graph = dict()
 
     for i, ch in enumerate(moore_mass[NAME_POINTS]):
@@ -38,11 +38,14 @@ def remove_unreacheble_state(moore_mass):
                 s = moore_mass[ch][i]
                 if s != "":
                     temp = s.split(",")
-                    if len(temp) > 1:
+                    if len(temp) > 1 and is_uniq:
+                        if s not in graph: graph[s] = Ptr(s)
                         for item in temp:
                             if item not in graph: graph[item] = Ptr(item)
                             graph[new_point].next[item] = graph[item]
                             graph[item].prev[new_point] = graph[new_point]
+                            graph[new_point].next[s] = graph[s]
+                            graph[s].prev[new_point] = graph[new_point]
                     if s not in graph: graph[s] = Ptr(s)
                     graph[new_point].next[s] = graph[s]
                     graph[s].prev[new_point] = graph[new_point]
@@ -60,11 +63,11 @@ def remove_unreacheble_state(moore_mass):
     new_moore_mass[NAME_OUTPUT_CH] = []
     new_moore_mass[NAME_POINTS] = []
     for i, ch in enumerate(moore_mass[NAME_POINTS]):
-        if ch not in visited: continue
+        if ch not in visited or ch in new_moore_mass[NAME_POINTS]: continue
         for k, line in enumerate(moore_mass):
             if line not in new_moore_mass: new_moore_mass[line] = list()
             new_moore_mass[line].append(moore_mass[line][i])
-
+    visited.clear()
     return  new_moore_mass
 
 def dfs(node: Ptr):

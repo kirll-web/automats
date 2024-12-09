@@ -165,8 +165,7 @@ def determinate(nfa_automat, output_file):
             s = ",".join(s)
             rewrite_table[ch][kindex - 1] = s
 
-
-    rewrite_table = remove_unreacheble_state(rewrite_table)
+    rewrite_table = remove_unreacheble_state(rewrite_table, False)
     for i, b in enumerate(rewrite_table):
         if b == LINE_END:
             print(";", end = "")
@@ -209,10 +208,10 @@ def determinate(nfa_automat, output_file):
     
 
 def main(args):
-    input_file_name = args[0]
-    output_file_name = args[1]
-    #input_file_name = "6.csv"
-    #output_file_name = "output.csv"
+    #input_file_name = args[0]
+    #output_file_name = args[1]
+    input_file_name = "4.csv"
+    output_file_name = "output.csv"
     input_file = open(input_file_name, "r",  encoding="utf-8")
     output_file = open(output_file_name, "w+", encoding="utf-8")
 
