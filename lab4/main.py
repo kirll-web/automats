@@ -110,54 +110,28 @@ def determinate(nfa_automat, output_file):
             if finded_q[item]: continue
             table[item] = []
             for i in range(0, len(table[LINE_CH])):
-                table[item].append("") #заполнение массива пустыми массивами == количеству LINE_CH
+                table[item].append("")
             qs = item.split(Q_SEPARATOR)
-            if len(qs) > 1:
-                qs = add_empty_tr(qs.copy(), empty_transitions)
-                for q in qs:
-                    for kindex, ch in enumerate(table[LINE_CH]):
-                        if ch == EMPTY_CH: continue
-                        tr = nfa_automat[ch][nfa_automat[LINE_STATES].index(q)]
-                        if tr != "":
-                            new_tr = tr
-                            mk = table[item][kindex]
-                            if len(mk) > 0:
-                                new_tr = table[item][kindex]
-                                s = table[item][kindex].split(",")
-                                q_in_new_tr = tr.split(",")
-                                for itemK in q_in_new_tr:
-                                    if itemK not in s:
-                                        new_tr = f"{new_tr},{itemK}"
-                            table[item][kindex] = new_tr
+            qs = add_empty_tr(qs.copy(), empty_transitions)
+            for q in qs:
+                for kindex, ch in enumerate(table[LINE_CH]):
+                    if ch == EMPTY_CH: continue
+                    tr = nfa_automat[ch][nfa_automat[LINE_STATES].index(q)]
+                    if tr != "":
+                        new_tr = tr
+                        mk = table[item][kindex]
+                        if len(mk) > 0:
+                            new_tr = table[item][kindex]
+                            s = table[item][kindex].split(Q_SEPARATOR)
+                            q_in_new_tr = tr.split(Q_SEPARATOR)
+                            for itemK in q_in_new_tr:
+                                if itemK not in s:
+                                    new_tr = f"{new_tr},{itemK}"
+                        table[item][kindex] = new_tr
 
-                            if new_tr not in finded_q:
-                                new_finded_q[new_tr] = False
-                                find_new_q = True
-            # этот переход нам нужно подставить в строчку table[item] в столбце под нужным симвлом
-            # в конце подстановки нужно добавить все новые перехоы в finded_q. Если найдены новые переходы
-            # find_new_q = True
-            # иначе False
-            else:
-                qs = add_empty_tr(qs.copy(), empty_transitions)
-                for q in qs:
-                    for kindex, ch in enumerate(table[LINE_CH]):
-                        if ch == EMPTY_CH: continue
-                        tr = nfa_automat[ch][nfa_automat[LINE_STATES].index(q)]
-                        if tr != "":
-                            new_tr = tr
-                            mk = table[item][kindex]
-                            if len(mk) > 0:
-                                new_tr = table[item][kindex]
-                                s = table[item][kindex].split(",")
-                                q_in_new_tr = tr.split(",")
-                                for itemK in q_in_new_tr:
-                                    if itemK not in s:
-                                        new_tr = f"{new_tr},{itemK}"
-                            table[item][kindex] = new_tr
-
-                            if new_tr not in finded_q:
-                                new_finded_q[new_tr] = False
-                                find_new_q = True
+                        if new_tr not in finded_q:
+                            new_finded_q[new_tr] = False
+                            find_new_q = True
             new_finded_q[item] = True
         finded_q = new_finded_q
 
@@ -172,14 +146,14 @@ def determinate(nfa_automat, output_file):
                 for i in range(1, len(table)):
                     rewrite_table[ch].append("")
         else:
-            s = line.split(",")
+            s = line.split(Q_SEPARATOR)
             s.sort()
             s = list(dict.fromkeys(s))
-            s = ",".join(s)
+            s = Q_SEPARATOR.join(s)
             rewrite_table[LINE_STATES].append(s)
 
     for states in rewrite_table[LINE_STATES]:
-        temp = states.split(",")
+        temp = states.split(Q_SEPARATOR)
         for state in temp:
             if state in end_state:
                 rewrite_table[LINE_END].append(f";{NAME_END}")
@@ -190,10 +164,10 @@ def determinate(nfa_automat, output_file):
         for kindex, q in enumerate(table):
             if q == LINE_CH: continue
             s = table[q][yandex]
-            s = s.split(",")
+            s = s.split(Q_SEPARATOR)
             s.sort()
             s = list(dict.fromkeys(s))
-            s = ",".join(s)
+            s = Q_SEPARATOR.join(s)
             rewrite_table[ch][kindex - 1] = s
 
     rewrite_table = remove_unreacheble_state(rewrite_table, False)
@@ -236,12 +210,8 @@ def determinate(nfa_automat, output_file):
     temp_file =  open("temp.csv", "r", encoding="utf-8")
     moore_transform_to_min(temp_file, output_file)
 
-    
-
 def main(args):
-    input_file_name = "9.csv"
-    output_file_name = "output.csv"
-    input_file_name = args[0] # fixme mock
+    input_file_name = args[0]
     output_file_name = args[1]
 
     input_file = open(input_file_name, "r",  encoding="utf-8")
