@@ -110,11 +110,13 @@ def minimize_moore_mass(moore_mass):
 def get_finish_map_classes(moore_mass, g_map):
     find_finish = False
     map_classes = get_map_classes(moore_mass, g_map)
-    while not find_finish:
+    count_finish = 0
+    expected_count_finish = 3
+    while count_finish != expected_count_finish:
         new_g_map = create_g_map(map_classes)
         new_map_classes = get_map_classes(moore_mass, new_g_map)
         if len(map_classes) == len(new_map_classes):
-            find_finish = True
+            count_finish += 1
         map_classes = new_map_classes
 
     return map_classes

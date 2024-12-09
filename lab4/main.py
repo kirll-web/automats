@@ -1,15 +1,15 @@
 import sys
 
-from moore import moore_transform_to_min
+from moore import moore_transform_to_min, remove_unreacheble_state
 
-LINE_END = "LINE_END"
-LINE_STATES = "LINE_STATES"
+LINE_END = "Y"
+LINE_STATES = "Q"
 LINE_CH = "LINE_CH"
 EMPTY_CH = "ε"
 NAME_END = "F"
 Q_SEPARATOR = ","
 NAME_NEW_Q = "S"
-end_state = "null"
+end_state = []
 
 
 def mockOutput(table):
@@ -22,18 +22,18 @@ def read_nfa(input_file):
     automat = dict()
     automat[LINE_END] = []
     automat[LINE_STATES] = []
-    index_end_state = 0
+    index_end_state = []
     for index, line in enumerate(lines):
         if index == 0:
             for i, ch in enumerate(line.strip().split(";")):
                 if i != 0: automat[LINE_END].append(ch)
                 if ch == NAME_END:
-                    index_end_state = i
+                    index_end_state.append(i)
         else:
             if index == 1:
                 for i, ch in enumerate(line.strip().split(";")):
                     if i != 0: automat[LINE_STATES].append(ch)
-                    if i == index_end_state: end_state = ch
+                    if i in index_end_state: end_state.append(ch)
             else:
                 first_ch = line.strip().split(";")[0]
                 for i, ch in enumerate(line.strip().split(";")):
@@ -117,7 +117,7 @@ def determinate(nfa_automat, output_file):
 
     rewrite_table = dict()
     rewrite_table[LINE_END] = []
-    rewrite_table[LINE_STATES] = dict()
+    rewrite_table[LINE_STATES] = []
 
     for yandex, line in enumerate(table):
         if line == LINE_CH:
@@ -126,18 +126,33 @@ def determinate(nfa_automat, output_file):
                 for i in range(1, len(table)):
                     rewrite_table[ch].append("")
         else:
-            rewrite_table[LINE_STATES][line] = f"{NAME_NEW_Q}{yandex}"
-    for yandex in range(0, len(rewrite_table[LINE_STATES])):
-        if yandex < len(rewrite_table[LINE_STATES]) - 1: rewrite_table[LINE_END].append(";")
-        else:  rewrite_table[LINE_END].append(NAME_END)
+            s = line.split(",")
+            s.sort()
+            s = list(dict.fromkeys(s))
+            s = ",".join(s)
+            rewrite_table[LINE_STATES].append(s)
+
+    for states in rewrite_table[LINE_STATES]:
+        temp = states.split(",")
+        for state in temp:
+            if state in end_state:
+                rewrite_table[LINE_END].append(f";{NAME_END}")
+                break
+        else: rewrite_table[LINE_END].append(";")
 
     for yandex, ch in enumerate(table[LINE_CH]):
         for kindex, q in enumerate(table):
             if q == LINE_CH: continue
             s = table[q][yandex]
+            s = line.split(",")
+            s.sort()
+            s = list(dict.fromkeys(s))
+            s = ",".join(s)
             if s == "": rewrite_table[ch][kindex-1] = s
-            else: rewrite_table[ch][kindex-1] = rewrite_table[LINE_STATES][s]
+            else: rewrite_table[ch][kindex-1] = s
 
+
+    rewrite_table = remove_unreacheble_state(rewrite_table)
     for i, b in enumerate(rewrite_table):
         if b == LINE_END:
             print(";", end = "")
@@ -147,7 +162,7 @@ def determinate(nfa_automat, output_file):
         else:
             if b == LINE_STATES:
                 for k, c in enumerate(rewrite_table[b]):
-                    print(f";{rewrite_table[b][c]}", end ="")
+                    print(f";{c}", end ="")
                 print()
             else:
                 print(b, end="")
@@ -159,14 +174,13 @@ def determinate(nfa_automat, output_file):
     temp_file = open("temp.csv", "w+", encoding="utf-8")
     for i, b in enumerate(rewrite_table):
         if b == LINE_END:
-            temp_file.write(";")
             for k, c in enumerate(rewrite_table[b]):
                 temp_file.write(c)
             temp_file.write("\n")
         else:
             if b == LINE_STATES:
                 for k, c in enumerate(rewrite_table[b]):
-                    temp_file.write(f";{rewrite_table[b][c]}")
+                    temp_file.write(f";{c}")
                 temp_file.write("\n")
             else:
                 temp_file.write(b)
@@ -183,7 +197,7 @@ def determinate(nfa_automat, output_file):
 def main(args):
     input_file_name = args[0]
     output_file_name = args[1]
-    #input_file_name = "3.csv"
+    #input_file_name = "4.csv"
     #output_file_name = "output.csv"
     input_file = open(input_file_name, "r",  encoding="utf-8")
     output_file = open(output_file_name, "w+", encoding="utf-8")
