@@ -54,6 +54,21 @@ def read_nfa(input_file):
     automat = new_automat
     return automat
 
+def add_empty_tr(qs, empty_transition):
+    find_new_q = True
+    new_qs = qs.copy()
+    while find_new_q:
+        find_new_q = False
+        for i in qs:
+            if i in empty_transition:
+                for b in empty_transition[i]:
+                    if b not in new_qs:
+                        new_qs.append(b)
+                        find_new_q = True
+        qs = new_qs
+    return qs
+
+
 def determinate(nfa_automat, output_file):
     empty_transitions = dict()
     global end_state
@@ -98,14 +113,8 @@ def determinate(nfa_automat, output_file):
                 table[item].append("") #заполнение массива пустыми массивами == количеству LINE_CH
             qs = item.split(Q_SEPARATOR)
             if len(qs) > 1:
-                new_qs = qs.copy()
+                qs = add_empty_tr(qs.copy(), empty_transitions)
                 for q in qs:
-                    if q in empty_transitions and len(empty_transitions[q]) > 1:
-                        for b in empty_transitions[q]:
-                            if b != q: new_qs.append(b)
-                qs = new_qs
-                for q in qs:
-
                     for kindex, ch in enumerate(table[LINE_CH]):
                         if ch == EMPTY_CH: continue
                         tr = nfa_automat[ch][nfa_automat[LINE_STATES].index(q)]
@@ -129,12 +138,7 @@ def determinate(nfa_automat, output_file):
             # find_new_q = True
             # иначе False
             else:
-                new_qs = qs.copy()
-                for q in qs:
-                    if q in empty_transitions and len(empty_transitions[q]) > 1:
-                        for b in empty_transitions[q]:
-                            if b != q: new_qs.append(b)
-                qs = new_qs
+                qs = add_empty_tr(qs.copy(), empty_transitions)
                 for q in qs:
                     for kindex, ch in enumerate(table[LINE_CH]):
                         if ch == EMPTY_CH: continue
@@ -235,7 +239,7 @@ def determinate(nfa_automat, output_file):
     
 
 def main(args):
-    input_file_name = "8.csv"
+    input_file_name = "9.csv"
     output_file_name = "output.csv"
     input_file_name = args[0] # fixme mock
     output_file_name = args[1]
