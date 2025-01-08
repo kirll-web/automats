@@ -27,6 +27,9 @@ def parse_regex_to_nfa(regex):
     start_state = new_state()
     end_state = new_state()
 
+    transitions[start_state] = defaultdict(list)
+    transitions[end_state] = defaultdict(list)
+
     for char in regex:
         if char == '(':  # Группировка
             stack.append((start_state, end_state))
@@ -55,8 +58,9 @@ def parse_regex_to_nfa(regex):
             kleene_end = new_state()
             transitions[kleene_start] = defaultdict(list)
             transitions[kleene_end] = defaultdict(list)
-            transitions[kleene_start]['ε'].extend([start_state, kleene_end])
-            transitions[end_state]['ε'].extend([start_state, kleene_end])
+            transitions[kleene_start]['ε'].extend([start_state])
+            transitions[end_state]['ε'].extend([kleene_start])
+            transitions[kleene_end]['ε'].extend([kleene_start])
             start_state, end_state = kleene_start, kleene_end
         elif char == '+':  # Конкатенация
             next_state = new_state()
