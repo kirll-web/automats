@@ -121,10 +121,10 @@ def write_nfa_to_csv(transitions, start_state, final_states, output_file):
 
 
 def main():
-    #output_file_name = sys.argv[0]
-    #regex = sys.argv[1]
-    output_file_name = "output.csv"
-    regex = "r*r" #FIXME MOCK
+    output_file_name = sys.argv[0]
+    regex = sys.argv[1]
+    #output_file_name = "output.csv"
+    #regex = "r*r" #FIXME MOCK
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
