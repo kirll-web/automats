@@ -67,7 +67,12 @@ def parse_regex_to_nfa(regex):
             transitions[start_state]['ε'].append(next_state)
             start_state = next_state
         else:  # Конкретный символ
+            next_state = new_state()
+            transitions[next_state] = defaultdict(list)
+
             transitions[start_state][char].append(end_state)
+            start_state = end_state
+            end_state = next_state
 
     return transitions, start_state, {end_state}
 
@@ -127,7 +132,7 @@ def main(args):
         regex = args[1]
     except Exception:
         output_file_name = "output.csv"
-        regex = "r*r" #FIXME MOCK
+        regex = "(tw|y)*(tq|t)" #FIXME MOCK
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
