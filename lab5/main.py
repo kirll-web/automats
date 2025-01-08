@@ -32,31 +32,40 @@ def parse_regex_to_nfa(regex):
             stack.append((start_state, end_state))
             start_state = new_state()
             end_state = new_state()
+            transitions[start_state] = defaultdict(list)
+            transitions[end_state] = defaultdict(list)
         elif char == ')':
             old_start, old_end = stack.pop()  # Извлекаем старые состояния
             transitions[old_end]['ε'].append(start_state)  # Соединяем старый конец с началом подграфа
-            transitions[end_state]['ε'].append(old_end)  # Завершаем подграф КАК БУДТО КАКАЯ ТО ХУЙНЯ И ПОЯВЛЯЕТСЯ ЦИКЛ 
+            transitions[end_state]['ε'].append(old_end)  # Завершаем подграф
             transitions[old_start]['ε'].append(start_state)  # Важное соединение!
             end_state = new_state()
+            transitions[end_state] = defaultdict(list)
             start_state = old_end
         elif char == '|':  # Альтернатива
             alt_start = new_state()
             alt_end = new_state()
+            transitions[alt_start] = defaultdict(list)
+            transitions[alt_end] = defaultdict(list)
             transitions[alt_start]['ε'].extend([start_state, end_state])
             transitions[end_state]['ε'].append(alt_end)
             start_state, end_state = alt_start, alt_end
         elif char == '*':  # Замыкание Клини
             kleene_start = new_state()
             kleene_end = new_state()
+            transitions[kleene_start] = defaultdict(list)
+            transitions[kleene_end] = defaultdict(list)
             transitions[kleene_start]['ε'].extend([start_state, kleene_end])
             transitions[end_state]['ε'].extend([start_state, kleene_end])
             start_state, end_state = kleene_start, kleene_end
         elif char == '+':  # Конкатенация
             next_state = new_state()
+            transitions[next_state] = defaultdict(list)
             transitions[start_state]['ε'].append(next_state)
             start_state = next_state
         else:  # Конкретный символ
             next_state = new_state()
+            transitions[next_state] = defaultdict(list)
             transitions[start_state][char].append(next_state)
             start_state, end_state = next_state, end_state
 
@@ -65,12 +74,11 @@ def parse_regex_to_nfa(regex):
 def write_nfa_to_csv(transitions, start_state, final_states, output_file):
     """Записывает NFA в формате CSV."""
 
-    with open(output_file, 'w', newline='', encoding='utf-8'):
+    with open(output_file, 'w', newline='', encoding='utf-8') as file:
         # проверяем какое стартовое состояние и записываем сначала его
         output_dict = dict()
         output_dict[OUTPUT_CH] = []
         output_dict[QS] = []
-
 
         output_dict[OUTPUT_CH].append(";")
         output_dict[QS].append(start_state)
@@ -101,8 +109,12 @@ def write_nfa_to_csv(transitions, start_state, final_states, output_file):
                 output_dict[item2][i] = tr
 
         for item in output_dict:
+            if item != QS and item != OUTPUT_CH:
+                file.write(f"{item}")
+            for k in output_dict[item]:
+                file.write(f";{k}")
+            file.write("\n")
             print(f"{item} {output_dict[item]}")
-
 
 
 
