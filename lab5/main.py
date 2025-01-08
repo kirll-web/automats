@@ -80,7 +80,6 @@ def write_nfa_to_csv(transitions, start_state, final_states, output_file):
         output_dict[OUTPUT_CH] = []
         output_dict[QS] = []
 
-        output_dict[OUTPUT_CH].append(";")
         output_dict[QS].append(start_state)
 
         if start_state in final_states:
