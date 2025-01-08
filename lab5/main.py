@@ -80,6 +80,7 @@ def write_nfa_to_csv(transitions, start_state, final_states, output_file):
         output_dict[OUTPUT_CH] = []
         output_dict[QS] = []
 
+        #output_dict[OUTPUT_CH].append(";")
         output_dict[QS].append(start_state)
 
         if start_state in final_states:
@@ -108,6 +109,8 @@ def write_nfa_to_csv(transitions, start_state, final_states, output_file):
                 output_dict[item2][i] = tr
 
         for item in output_dict:
+            if item == OUTPUT_CH:
+                file.write(";")
             if item != QS and item != OUTPUT_CH:
                 file.write(f"{item}")
             for k in output_dict[item]:
@@ -118,10 +121,10 @@ def write_nfa_to_csv(transitions, start_state, final_states, output_file):
 
 
 def main():
-    output_file_name = sys.argv[0]
-    regex = sys.argv[1]
-    #output_file_name = "output.csv"
-    #regex = "(r*|su*t)* su*" #FIXME MOCK
+    #output_file_name = sys.argv[0]
+    #regex = sys.argv[1]
+    output_file_name = "output.csv"
+    regex = "r*r" #FIXME MOCK
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
