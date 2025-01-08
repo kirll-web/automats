@@ -114,7 +114,6 @@ def write_nfa_to_csv(transitions, start_state, final_states, output_file):
             for k in output_dict[item]:
                 file.write(f";{k}")
             file.write("\n")
-            print(f"{item} {output_dict[item]}")
 
 
 
@@ -129,7 +128,6 @@ def main():
 
     transitions, start_state, final_states = parse_regex_to_nfa(regex)
     write_nfa_to_csv(transitions, start_state, final_states, output_file_name)
-    print(f"NFA successfully written to {output_file}")
 
 if __name__ == "__main__":
     main()
