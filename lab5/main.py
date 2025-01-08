@@ -132,4 +132,4 @@ def main(args):
     write_nfa_to_csv(transitions, start_state, final_states, output_file_name)
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
