@@ -64,10 +64,7 @@ def parse_regex_to_nfa(regex):
             transitions[start_state]['ε'].append(next_state)
             start_state = next_state
         else:  # Конкретный символ
-            next_state = new_state()
-            transitions[next_state] = defaultdict(list)
-            transitions[start_state][char].append(next_state)
-            start_state, end_state = next_state, end_state
+            transitions[start_state][char].append(end_state)
 
     return transitions, start_state, {end_state}
 
@@ -121,10 +118,10 @@ def write_nfa_to_csv(transitions, start_state, final_states, output_file):
 
 
 def main(args):
-    output_file_name = args[0]
-    regex = args[1]
-    #output_file_name = "output.csv"
-    #regex = "r*r" #FIXME MOCK
+    #output_file_name = args[0]
+    #regex = args[1]
+    output_file_name = "output.csv"
+    regex = "r*r" #FIXME MOCK
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
