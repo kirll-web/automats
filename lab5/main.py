@@ -101,12 +101,11 @@ def write_nfa_to_csv(transitions, start_state, final_states, output_file):
 
 
         for i, item in enumerate(transitions):
-            if item == start_state: continue
             for item2 in transitions[item]:
                 if item2 not in output_dict: output_dict[item2] = []
                 if len(item) > 1: tr = ",".join(transitions[item][item2])
                 else: tr = ",".join(transitions[item][item2])
-                output_dict[item2][i] = tr
+                output_dict[item2][output_dict[QS].index(item)] = tr
 
         for item in output_dict:
             if item == OUTPUT_CH:
