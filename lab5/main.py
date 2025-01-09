@@ -81,10 +81,6 @@ class RegexToNFA:
                 symbols.append(self.create_kleene_star_nfa(nfa))
             else:
                 symbols.append(self.create_symbol_nfa(ch))
-                if "|" in operators and len(symbols) > 2:
-                    symb2 = symbols.pop()
-                    symb1 = symbols.pop()
-                    symbols.append(self.nfa_plus_nfa(symb1, symb2))
 
 
         while operators:
