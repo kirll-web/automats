@@ -78,7 +78,7 @@ class RegexToNFA:
             else:
                 symbols.append(self.create_symbol_nfa(ch))
             while len(symbols) > 1:
-                while operators:
+                while operators and not (len(operators) == 1 and operators[0] == "("):
                     self.process_operator(operators, symbols)
                 if len(symbols) > 1:
                     symb2 = symbols.pop()
@@ -98,6 +98,8 @@ class RegexToNFA:
     def process_operator(self, operators, operands):
         """Обработать оператор (|, *)."""
         operator = operators.pop()
+        if operator == "(":
+            operators.append(operator)
         if operator == '|':
             right = operands.pop()
             left = operands.pop()
@@ -105,8 +107,6 @@ class RegexToNFA:
         elif operator == '*':
             nfa = operands.pop()
             operands.append(self.create_kleene_star_nfa(nfa))
-        else:
-            raise ValueError(f"Неизвестный оператор: {operator}")
 
 
 def main(args):
@@ -117,7 +117,7 @@ def main(args):
         regex = args[1]
     except Exception:
         output_file_name = "output.csv"
-        regex = "tw|y" #FIXME MOCK
+        regex = "(tw|y)*(tq|t)" #FIXME MOCK
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
