@@ -71,12 +71,11 @@ class RegexToNFA:
                 operators.pop()  # Удалить '('
             elif ch == '|':
                 operators.append(ch)
-                if len(symbols) > 1:
+                while len(symbols) > 1:
                     symb2 = symbols.pop()
                     symb1 = symbols.pop()
                     symbols.append(self.nfa_plus_nfa(symb1, symb2))
             elif ch == '*':
-                # Применяем оператор `*` сразу
                 nfa = symbols.pop()
                 symbols.append(self.create_kleene_star_nfa(nfa))
             else:
@@ -106,6 +105,11 @@ class RegexToNFA:
             nfa = operands.pop()
             operands.append(self.create_kleene_star_nfa(nfa))
 
+def is_kleen_star_next(regex, i_ch):
+    if i_ch < len(regex) - 1:
+        if regex[i_ch] == "*":
+            return True
+    return False
 
 def main(args):
     output_file_name = ""
