@@ -1,127 +1,105 @@
 import sys
-
-from collections import defaultdict
 OUTPUT_CH = "OUTPUT_CH"
 QS = "QS"
 
+class State:
+    def __init__(self, id):
+        self.id = id
+        self.transitions = {}  # {symbol: [state1, state2, ...]}
 
-def parse_regex_to_nfa(regex):
-    """
-    Построение ε-НКА из регулярного выражения с использованием метода Томпсона.
-    Возвращает:
-        - переходы (dict): Ключ — состояние, значение — словарь {символ: [список следующих состояний]}.
-        - начальное состояние (str)
-        - конечные состояния (set)
-    """
-    state_counter = 0
+class NFA:
+    def __init__(self, start_state, accept_state):
+        self.start_state = start_state
+        self.accept_state = accept_state
 
-    def new_state():
-        nonlocal state_counter
-        state = f"q{state_counter}"
-        state_counter += 1
+class RegexToNFA:
+    def __init__(self):
+        self.state_counter = 0
+
+    def create_state(self):
+        """Создать новое состояние с уникальным идентификатором."""
+        state = State(self.state_counter)
+        self.state_counter += 1
         return state
 
-    stack = []
-    transitions = defaultdict(lambda: defaultdict(list))
+    def create_symbol_nfa(self, symbol):
+        """Создать НКА для одного символа."""
+        start = self.create_state()
+        accept = self.create_state()
+        start.transitions[symbol] = [accept]
+        return NFA(start, accept)
 
-    start_state = new_state()
-    end_state = new_state()
+    def create_union_nfa(self, left, right):
+        """Создать НКА для операции '|'."""
+        start = self.create_state()
+        accept = self.create_state()
+        start.transitions[None] = [left.start_state, right.start_state]  # Пустые переходы
+        left.accept_state.transitions[None] = [accept]
+        right.accept_state.transitions[None] = [accept]
+        return NFA(start, accept)
 
-    transitions[start_state] = defaultdict(list)
-    transitions[end_state] = defaultdict(list)
+    def create_kleene_star_nfa(self, nfa):
+        """Создать НКА для операции '*'."""
+        start = self.create_state()
+        medium = self.create_state()
+        accept = self.create_state()
+        start.transitions[None] = [medium]  # Пустые переходы
+        medium.transitions[None] = [nfa.start_state, accept]
+        nfa.accept_state.transitions[None] = [medium]
+        return NFA(start, accept)
 
-    for char in regex:
-        if char == '(':  # Группировка
-            stack.append((start_state, end_state))
-            start_state = new_state()
-            end_state = new_state()
-            transitions[start_state] = defaultdict(list)
-            transitions[end_state] = defaultdict(list)
-        elif char == ')':
-            old_start, old_end = stack.pop()  # Извлекаем старые состояния
-            transitions[old_end]['ε'].append(start_state)  # Соединяем старый конец с началом подграфа
-            transitions[end_state]['ε'].append(old_end)  # Завершаем подграф
-            transitions[old_start]['ε'].append(start_state)  # Важное соединение!
-            end_state = new_state()
-            transitions[end_state] = defaultdict(list)
-            start_state = old_end
-        elif char == '|':  # Альтернатива
-            alt_start = new_state()
-            alt_end = new_state()
-            transitions[alt_start] = defaultdict(list)
-            transitions[alt_end] = defaultdict(list)
-            transitions[alt_start]['ε'].extend([start_state, end_state])
-            transitions[end_state]['ε'].append(alt_end)
-            start_state, end_state = alt_start, alt_end
-        elif char == '*':  # Замыкание Клини
-            kleene_start = new_state()
-            kleene_end = new_state()
-            transitions[kleene_start] = defaultdict(list)
-            transitions[kleene_end] = defaultdict(list)
-            transitions[kleene_start]['ε'].extend([start_state])
-            transitions[end_state]['ε'].extend([kleene_start])
-            start_state, end_state = kleene_start, kleene_end
-        elif char == '+':  # Конкатенация
-            next_state = new_state()
-            transitions[next_state] = defaultdict(list)
-            transitions[start_state]['ε'].append(next_state)
-            start_state = next_state
-        else:  # Конкретный символ
-            next_state = new_state()
-            transitions[next_state] = defaultdict(list)
+    def nfa_plus_nfa(self, nfa1: NFA, nfa2: NFA):
+        """Создать НКА для операции '*'."""
+        start = self.create_state()
+        accept = self.create_state()
+        nfa1.accept_state.transitions[None] = [nfa2.start_state]  # Пустые переходы
+        nfa2.accept_state.transitions[None] = [accept]
+        start.transitions[None] = [nfa1.start_state]
+        return NFA(start, accept)
 
-            transitions[start_state][char].append(end_state)
-            start_state = end_state
-            end_state = next_state
+    def build_nfa(self, regex):
+        """Построить НКА из регулярного выражения."""
+        operators = []
+        symbols = []
 
-    return transitions, start_state, {end_state}
-
-def write_nfa_to_csv(transitions, start_state, final_states, output_file):
-    """Записывает NFA в формате CSV."""
-
-    with open(output_file, 'w', newline='', encoding='utf-8') as file:
-        # проверяем какое стартовое состояние и записываем сначала его
-        output_dict = dict()
-        output_dict[OUTPUT_CH] = []
-        output_dict[QS] = []
-
-        #output_dict[OUTPUT_CH].append(";")
-        output_dict[QS].append(start_state)
-
-        if start_state in final_states:
-            output_dict[OUTPUT_CH].append("F")
-
-        for i, item in enumerate(transitions):
-            if item == start_state: continue
-            output_dict[QS].append(item)
-            if item in final_states:
-                output_dict[OUTPUT_CH].append("F")
+        for ch in regex:
+            if ch == '(':
+                operators.append(ch)
+            elif ch == ')':
+                while operators and operators[-1] != '(':
+                    self.process_operator(operators, symbols)
+                operators.pop()  # Удалить '('
+            elif ch == '|':
+                operators.append(ch)
+            elif ch == '*':
+                # Применяем оператор `*` сразу
+                nfa = symbols.pop()
+                symbols.append(self.create_kleene_star_nfa(nfa))
             else:
-                output_dict[OUTPUT_CH].append("")
-            for item2 in transitions[item]:
-                if item2 not in output_dict:
-                    output_dict[item2] = []
-                    for k, _ in enumerate(transitions):
-                        output_dict[item2].append("")
+                symbols.append(self.create_symbol_nfa(ch))
 
+        while operators:
+            self.process_operator(operators, symbols)
 
-        for i, item in enumerate(transitions):
-            for item2 in transitions[item]:
-                if item2 not in output_dict: output_dict[item2] = []
-                if len(item) > 1: tr = ",".join(transitions[item][item2])
-                else: tr = ",".join(transitions[item][item2])
-                output_dict[item2][output_dict[QS].index(item)] = tr
+        while len(symbols) > 1:
+            symb2 = symbols.pop()
+            symb1 = symbols.pop()
+            symbols.append(self.nfa_plus_nfa(symb1, symb2))
 
-        for item in output_dict:
-            if item == OUTPUT_CH:
-                file.write(";")
-            if item != QS and item != OUTPUT_CH:
-                file.write(f"{item}")
-            for k in output_dict[item]:
-                file.write(f";{k}")
-            file.write("\n")
+        return symbols.pop()
 
-
+    def process_operator(self, operators, operands):
+        """Обработать оператор (|, *)."""
+        operator = operators.pop()
+        if operator == '|':
+            right = operands.pop()
+            left = operands.pop()
+            operands.append(self.create_union_nfa(left, right))
+        elif operator == '*':
+            nfa = operands.pop()
+            operands.append(self.create_kleene_star_nfa(nfa))
+        else:
+            raise ValueError(f"Неизвестный оператор: {operator}")
 
 
 def main(args):
@@ -132,12 +110,86 @@ def main(args):
         regex = args[1]
     except Exception:
         output_file_name = "output.csv"
-        regex = "(tw|y)*(tq|t)" #FIXME MOCK
+        regex = "a*|b" #FIXME MOCK
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
-    transitions, start_state, final_states = parse_regex_to_nfa(regex)
-    write_nfa_to_csv(transitions, start_state, final_states, output_file_name)
+    converter = RegexToNFA()
+    nfa = converter.build_nfa(regex)
+
+    def print_nfa(nfa):
+        visited = set()
+        stack = [nfa.start_state]
+
+        print("Состояния и переходы:")
+        while stack:
+            state = stack.pop()
+            if state.id in visited:
+                continue
+            visited.add(state.id)
+            for symbol, targets in state.transitions.items():
+                symbol_str = symbol if symbol is not None else "ε"
+                for target in targets:
+                    print(f"State {state.id} --{symbol_str}--> State {target.id}")
+                    stack.append(target)
+    with open(output_file_name, 'w', newline='', encoding='utf-8') as file:
+        # проверяем какое стартовое состояние и записываем сначала его
+        output_dict = dict()
+        output_dict[OUTPUT_CH] = []
+        output_dict[QS] = []
+
+        #output_dict[OUTPUT_CH].append(";")
+        output_dict[QS].append(nfa.start_state.id)
+
+        visited = set()
+        end = nfa.accept_state
+        output_dict[QS].append(end.id)
+        output_dict[OUTPUT_CH].append(""),
+        output_dict[OUTPUT_CH].append("F")
+        stack = [nfa.start_state]
+        max_size = 1
+        while stack:
+            state = stack.pop()
+            if state.id in visited:
+                continue
+            visited.add(state.id)
+            for symbol, targets in state.transitions.items():
+                symbol_str = symbol if symbol is not None else "ε"
+                for target in targets:
+                    if symbol_str not in output_dict:
+                        output_dict[symbol_str] = []
+                    if state.id not in output_dict[QS]:
+                        output_dict[QS].append(state.id)
+                        if state.id == end.id:
+                            output_dict[OUTPUT_CH].append("F")
+                        else:
+                            output_dict[OUTPUT_CH].append("")
+                    state_index = output_dict[QS].index(state.id)
+                    if max_size <= state_index: max_size = state_index + 1
+                    print()
+                    if len(output_dict[symbol_str]) <= max_size:
+                        for item in output_dict:
+                            if item == QS or item == OUTPUT_CH: continue
+                            if len(output_dict[item]) < max_size:
+                                for i in range(len(output_dict[item]), max_size):
+                                    output_dict[item].append("")
+                    print(len(output_dict[symbol_str]), max_size, state_index)
+                    if len(output_dict[symbol_str][state_index]) == 0:
+                        output_dict[symbol_str][state_index] = f"{target.id}"
+                    else: output_dict[symbol_str][state_index] += f",{target.id}"
+                    print(f"State {state.id} --{symbol_str}--> State {target.id}")
+                    stack.append(target)
+
+
+        for item in output_dict:
+            # if item == OUTPUT_CH:
+            #     file.write(";")
+            if item != QS and item != OUTPUT_CH:
+                file.write(f"{item}")
+            for k in output_dict[item]:
+                file.write(f";{k}")
+            file.write("\n")
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
