@@ -62,7 +62,7 @@ class RegexToNFA:
         operators = []
         symbols = []
 
-        for ch in regex:
+        for i_ch ,ch in enumerate(regex):
             if ch == '(':
                 operators.append(ch)
             elif ch == ')':
@@ -71,7 +71,7 @@ class RegexToNFA:
                 operators.pop()  # Удалить '('
             elif ch == '|':
                 operators.append(ch)
-                if len(symbols) > 1:
+                if len(symbols) > 1 and not is_kleen_star_next(regex, i_ch):
                     symb2 = symbols.pop()
                     symb1 = symbols.pop()
                     symbols.append(self.nfa_plus_nfa(symb1, symb2))
@@ -79,15 +79,19 @@ class RegexToNFA:
                 # Применяем оператор `*` сразу
                 nfa = symbols.pop()
                 symbols.append(self.create_kleene_star_nfa(nfa))
+                if len(symbols) > 1:
+                    symb2 = symbols.pop()
+                    symb1 = symbols.pop()
+                    symbols.append(self.nfa_plus_nfa(symb1, symb2))
             else:
                 symbols.append(self.create_symbol_nfa(ch))
                 if "|" in operators:
-                    if len(symbols) > 2:
+                    if len(symbols) > 2 and not is_kleen_star_next(regex, i_ch):
                         symb2 = symbols.pop()
                         symb1 = symbols.pop()
                         symbols.append(self.nfa_plus_nfa(symb1, symb2))
                 else:
-                    if len(symbols) > 2:
+                    if len(symbols) > 2 and not is_kleen_star_next(regex, i_ch):
                         symb2 = symbols.pop()
                         symb1 = symbols.pop()
                         symbols.append(self.nfa_plus_nfa(symb1, symb2))
@@ -116,6 +120,12 @@ class RegexToNFA:
             nfa = operands.pop()
             operands.append(self.create_kleene_star_nfa(nfa))
 
+
+def is_kleen_star_next(regex, i_ch):
+    if i_ch < len(regex) - 1:
+        if regex[i_ch] == "*":
+            return True
+    return False
 
 def main(args):
     output_file_name = ""
