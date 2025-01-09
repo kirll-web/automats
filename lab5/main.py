@@ -72,7 +72,7 @@ class RegexToNFA:
             elif ch == '|':
                 operators.append(ch)
 
-                if len(symbols) > 1:
+                while len(symbols) > 1:
                     symb2 = symbols.pop()
                     symb1 = symbols.pop()
                     symbols.append(self.nfa_plus_nfa(symb1, symb2))
