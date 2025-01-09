@@ -77,6 +77,13 @@ class RegexToNFA:
                 symbols.append(self.create_kleene_star_nfa(nfa))
             else:
                 symbols.append(self.create_symbol_nfa(ch))
+            while len(symbols) > 1:
+                while operators:
+                    self.process_operator(operators, symbols)
+                if len(symbols) > 1:
+                    symb2 = symbols.pop()
+                    symb1 = symbols.pop()
+                    symbols.append(self.nfa_plus_nfa(symb1, symb2))
 
         while operators:
             self.process_operator(operators, symbols)
@@ -110,7 +117,7 @@ def main(args):
         regex = args[1]
     except Exception:
         output_file_name = "output.csv"
-        regex = "a*|b" #FIXME MOCK
+        regex = "tw|y" #FIXME MOCK
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
