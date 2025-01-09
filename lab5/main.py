@@ -71,19 +71,17 @@ class RegexToNFA:
                 operators.pop()  # Удалить '('
             elif ch == '|':
                 operators.append(ch)
+                if len(symbols) > 1:
+                    symb2 = symbols.pop()
+                    symb1 = symbols.pop()
+                    symbols.append(self.nfa_plus_nfa(symb1, symb2))
             elif ch == '*':
                 # Применяем оператор `*` сразу
                 nfa = symbols.pop()
                 symbols.append(self.create_kleene_star_nfa(nfa))
             else:
                 symbols.append(self.create_symbol_nfa(ch))
-            while len(symbols) > 1:
-                while operators and not (len(operators) == 1 and operators[0] == "("):
-                    self.process_operator(operators, symbols)
-                if len(symbols) > 1:
-                    symb2 = symbols.pop()
-                    symb1 = symbols.pop()
-                    symbols.append(self.nfa_plus_nfa(symb1, symb2))
+
 
         while operators:
             self.process_operator(operators, symbols)
