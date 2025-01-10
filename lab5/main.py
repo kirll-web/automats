@@ -4,25 +4,128 @@ QS = "QS"
 
 OPERATORS = ["(",")", "|"]
 
+class RegexNode:
+    pass
+
+class Literal(RegexNode):
+    def __init__(self, char):
+        self.char = char
+
+    def __repr__(self):
+        return f"Literal('{self.char}')"
+
+class Epsilon(RegexNode):
+    def __repr__(self):
+        return "Epsilon()"
+
+class Concatenation(RegexNode):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def __repr__(self):
+        return f"Concatenation({self.left}, {self.right})"
+
+class Alternation(RegexNode):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def __repr__(self):
+        return f"Alternation({self.left}, {self.right})"
+
+class Star(RegexNode):
+    def __init__(self, node):
+        self.node = node
+
+    def __repr__(self):
+        return f"Star({self.node})"
+
+class Group(RegexNode):
+    def __init__(self, node):
+        self.node = node
+
+    def __repr__(self):
+        return f"Group({self.node})"
+
+class RegexParser:
+    def __init__(self, regex):
+        self.regex = regex
+        self.pos = 0
+
+    def parse(self):
+        return self._parse_alternation()
+
+    def _parse_alternation(self):
+        left = self._parse_concatenation()
+        while self._current_char() == '|':
+            self.pos += 1
+            right = self._parse_concatenation()
+            left = Alternation(left, right)
+        return left
+
+    def _parse_concatenation(self):
+        nodes = []
+        while self._current_char() and self._current_char() not in '|)':
+            nodes.append(self._parse_star())
+        if not nodes:
+            return Epsilon()
+        result = nodes[0]
+        for node in nodes[1:]:
+            result = Concatenation(result, node)
+        return result
+
+    def _parse_star(self):
+        node = self._parse_group_or_literal()
+        while self._current_char() == '*':
+            self.pos += 1
+            node = Star(node)
+        return node
+
+    def _parse_group_or_literal(self):
+        char = self._current_char()
+        if char == '(':
+            self.pos += 1
+            node = self._parse_alternation()
+            if self._current_char() != ')':
+                raise ValueError(f"Unmatched parenthesis at position {self.pos}")
+            self.pos += 1
+            return Group(node)
+        elif char == 'ε':
+            self.pos += 1
+            return Epsilon()
+        else:
+            self.pos += 1
+            return Literal(char)
+
+    def _current_char(self):
+        return self.regex[self.pos] if self.pos < len(self.regex) else None
+
+
 class State:
     def __init__(self, id):
         self.id = id
-        self.transitions = {}  # {symbol: [state1, state2, ...]}
+        self.transitions = {}  # {symbol: [state1, state2]}
+
 
 class NFA:
-    def __init__(self, start_state, accept_state):
-        self.start_state = start_state
-        self.accept_state = accept_state
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
 
-class RegexToNFA:
+    def __repr__(self):
+        return f"NFA(start={self.start}, end={self.end})"
+
+
+class NFABuilder:
     def __init__(self):
-        self.state_counter = 0
+        self.state_count = 0
 
     def create_state(self):
-        """Создать новое состояние с уникальным идентификатором."""
-        state = State(self.state_counter)
-        self.state_counter += 1
+        state = State(self.state_count)
+        self.state_count += 1
         return state
+
 
     def create_symbol_nfa(self, symbol):
         """Создать НКА для одного символа."""
@@ -35,9 +138,9 @@ class RegexToNFA:
         """Создать НКА для операции '|'."""
         start = self.create_state()
         accept = self.create_state()
-        start.transitions[None] = [left.start_state, right.start_state]  # Пустые переходы
-        left.accept_state.transitions[None] = [accept]
-        right.accept_state.transitions[None] = [accept]
+        start.transitions[None] = [left.start, right.start]  # Пустые переходы
+        left.end.transitions[None] = [accept]
+        right.end.transitions[None] = [accept]
         return NFA(start, accept)
 
     def create_kleene_star_nfa(self, nfa):
@@ -46,105 +149,65 @@ class RegexToNFA:
         medium = self.create_state()
         accept = self.create_state()
         start.transitions[None] = [medium]  # Пустые переходы
-        medium.transitions[None] = [nfa.start_state, accept]
-        nfa.accept_state.transitions[None] = [medium]
+        medium.transitions[None] = [nfa.start, accept]
+        nfa.end.transitions[None] = [medium]
         return NFA(start, accept)
 
     def create_plus_nfa(self, nfa):
         """Создать НКА для операции '*'."""
         start = self.create_state()
         accept = self.create_state()
-        start.transitions[None] = [nfa.start_state]  # Пустые переходы
-        nfa.accept_state.transitions[None] = [nfa.start_state, accept]
+        start.transitions[None] = [nfa.start]  # Пустые переходы
+        nfa.end.transitions[None] = [nfa.start, accept]
         return NFA(start, accept)
 
     def nfa_plus_nfa(self, nfa1: NFA, nfa2: NFA):
         """Создать НКА для операции '*'."""
         start = self.create_state()
         accept = self.create_state()
-        nfa1.accept_state.transitions[None] = [nfa2.start_state]  # Пустые переходы
-        nfa2.accept_state.transitions[None] = [accept]
-        start.transitions[None] = [nfa1.start_state]
+        nfa1.end.transitions[None] = [nfa2.start]  # Пустые переходы
+        nfa2.end.transitions[None] = [accept]
+        start.transitions[None] = [nfa1.start]
         return NFA(start, accept)
 
-    def build_nfa(self, regex):
-        """Построить НКА из регулярного выражения."""
-        operators = []
-        symbols = []
-        free_symbols = 0
+    def build(self, node):
+        if isinstance(node, Literal):
+            return self.create_symbol_nfa(node.char)
+        elif isinstance(node, Concatenation):
+            left_nfa = self.build(node.left)
+            right_nfa = self.build(node.right)
+            return self.nfa_plus_nfa(left_nfa, right_nfa)
+        elif isinstance(node, Alternation):
+            left_nfa = self.build(node.left)
+            right_nfa = self.build(node.right)
+            return self.nfa_plus_nfa(left_nfa, right_nfa)
+        elif isinstance(node, Star):
+            nfa = self.build(node.node)
+            return self.create_kleene_star_nfa(nfa)
+        elif isinstance(node, Group):
+            return self.build(node.node)
+        else:
+            raise ValueError(f"Unknown node type: {type(node)}")
 
-        for ch in regex:
-            if ch == '(':
-                operators.append(ch)
-            elif ch == ')':
-                while operators and operators[-1] != "(":
-                    operator = operators.pop()
-                    self.process_operator(operators, symbols, operator)
-                while free_symbols > 1:
-                    symb2 = symbols.pop()
-                    symb1 = symbols.pop()
-                    symbols.append(self.nfa_plus_nfa(symb1, symb2))
-                    free_symbols -= 1
-                operators.pop()
-                free_symbols = 0
-
-            elif ch == '|':
-                while free_symbols > 1:
-                    symb2 = symbols.pop()
-                    symb1 = symbols.pop()
-                    symbols.append(self.nfa_plus_nfa(symb1, symb2))
-                    free_symbols -= 1
-                free_symbols = 0
-                operators.append(ch)
-
-
-            elif ch == '*':
-                nfa = symbols.pop()
-                symbols.append(self.create_kleene_star_nfa(nfa))
-            elif ch == '+':
-                nfa = symbols.pop()
-                symbols.append(self.create_plus_nfa(nfa))
-
-            else:
-                symbols.append(self.create_symbol_nfa(ch))
-                free_symbols += 1
-
-
-        while operators:
-            operator = operators.pop()
-            if operator == "|":
-                end_symb = symbols.pop()
-                while len(symbols) > 1:
-                    symb2 = symbols.pop()
-                    symb1 = symbols.pop()
-                    symbols.append(self.nfa_plus_nfa(symb1, symb2))
-                symbols.append(end_symb)
-            self.process_operator(operators, symbols, operator)
-
-        while len(symbols) > 1:
-            symb2 = symbols.pop()
-            symb1 = symbols.pop()
-            symbols.append(self.nfa_plus_nfa(symb1, symb2))
-
-        return symbols.pop()
-
-    def process_operator(self, operators, operands, operator):
-        """Обработать оператор (|, *)."""
-        if operator == "(":
-            operators.append("(")
-        if operator == '|':
-            right = operands.pop()
-            left = operands.pop()
-            operands.append(self.create_union_nfa(left, right))
-        elif operator == '*':
-            nfa = operands.pop()
-            operands.append(self.create_kleene_star_nfa(nfa))
-
-def is_kleen_star_next(regex, i_ch):
-    if i_ch < len(regex) - 1:
-        if regex[i_ch] == "*":
-            return True
-    return False
+def print_nfa(nfa):
+    print("NFA States and Transitions:")
+    visited = set()
+    to_visit = [nfa.start]
+    while to_visit:
+        state = to_visit.pop()
+        if state in visited:
+            continue
+        visited.add(state)
+        print(f"State {state.id}:")
+        for symbol, targets in state.transitions.items():
+            for target in targets:
+                print(f"  {symbol} -> State {target.id}")
+                if target not in visited:
+                    to_visit.append(target)
+        for target in state.epsilon_transitions:
+            print(f"  ε -> State {target.id}")
+            if target not in visited:
+                to_visit.append(target)
 
 def main(args):
     output_file_name = ""
@@ -158,32 +221,18 @@ def main(args):
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
+    regex = "r*r"
+    parser = RegexParser(regex)
+    ast = parser.parse()
+    print(ast)
 
-    literals = []
-    buffer = []
-    for i_ch, ch in enumerate(regex):
-        if (ch == "*" or ch == "+") and len(literals) == 0:
-            buffer.append(ch)
-        elif ch not in OPERATORS:
-            literals.append(ch)
-        else:
-            if len(literals) > 0:
-                buffer.append(f'({"".join(literals)})')
-                literals.clear()
-            buffer.append(ch)
-    if len(literals) > 0:
-        buffer.append(f'({"".join(literals)})')
-        literals.clear()
-    print(regex)
-    regex = "".join(buffer)
-    print(regex)
-
-    converter = RegexToNFA()
-    nfa = converter.build_nfa(regex)
+    # Построение НКА
+    builder = NFABuilder()
+    nfa = builder.build(ast)
 
     def print_nfa(nfa):
         visited = set()
-        stack = [nfa.start_state]
+        stack = [nfa.start]
 
         print("Состояния и переходы:")
         while stack:
@@ -196,21 +245,23 @@ def main(args):
                 for target in targets:
                     print(f"State {state.id} --{symbol_str}--> State {target.id}")
                     stack.append(target)
+
+    print_nfa(nfa)
     with open(output_file_name, 'w', newline='', encoding='utf-8') as file:
         # проверяем какое стартовое состояние и записываем сначала его
         output_dict = dict()
         output_dict[OUTPUT_CH] = []
         output_dict[QS] = []
 
-        #output_dict[OUTPUT_CH].append(";")
-        output_dict[QS].append(nfa.start_state.id)
+        # output_dict[OUTPUT_CH].append(";")
+        output_dict[QS].append(nfa.start.id)
 
         visited = set()
-        end = nfa.accept_state
+        end = nfa.end
         output_dict[QS].append(end.id)
         output_dict[OUTPUT_CH].append(""),
         output_dict[OUTPUT_CH].append("F")
-        stack = [nfa.start_state]
+        stack = [nfa.start]
         max_size = 1
         while stack:
             state = stack.pop()
@@ -240,7 +291,8 @@ def main(args):
                     print(len(output_dict[symbol_str]), max_size, state_index)
                     if len(output_dict[symbol_str][state_index]) == 0:
                         output_dict[symbol_str][state_index] = f"{target.id}"
-                    else: output_dict[symbol_str][state_index] += f",{target.id}"
+                    else:
+                        output_dict[symbol_str][state_index] += f",{target.id}"
                     print(f"State {state.id} --{symbol_str}--> State {target.id}")
                     stack.append(target)
 
@@ -250,7 +302,6 @@ def main(args):
                 for i in range(len(output_dict[symbol]), len(output_dict[QS])):
                     output_dict[item].append("")
 
-
         for item in output_dict:
             # if item == OUTPUT_CH:
             #     file.write(";")
@@ -259,7 +310,5 @@ def main(args):
             for k in output_dict[item]:
                 file.write(f";{k}")
             file.write("\n")
-
-
 if __name__ == "__main__":
     main(sys.argv[1:])
