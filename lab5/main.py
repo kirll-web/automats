@@ -69,7 +69,7 @@ class RegexParser:
         while self._current_char() and self._current_char() not in '|)':
             nodes.append(self._parse_star())
         if not nodes:
-            return Epsilon()
+            return Literal("ε")
         result = nodes[0]
         for node in nodes[1:]:
             result = Concatenation(result, node)
@@ -91,9 +91,6 @@ class RegexParser:
                 raise ValueError(f"Unmatched parenthesis at position {self.pos}")
             self.pos += 1
             return Group(node)
-        elif char == 'ε':
-            self.pos += 1
-            return Epsilon()
         else:
             self.pos += 1
             return Literal(char)
@@ -174,7 +171,7 @@ class NFABuilder:
         if isinstance(node, Literal):
             return self.create_symbol_nfa(node.char)
         if isinstance(node, Epsilon):
-            return self.create_symbol_nfa("ε")
+            return self.create_symbol_nfa()
         elif isinstance(node, Concatenation):
             left_nfa = self.build(node.left)
             right_nfa = self.build(node.right)
