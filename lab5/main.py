@@ -170,8 +170,7 @@ class NFABuilder:
     def build(self, node):
         if isinstance(node, Literal):
             return self.create_symbol_nfa(node.char)
-        if isinstance(node, Epsilon):
-            return self.create_symbol_nfa()
+
         elif isinstance(node, Concatenation):
             left_nfa = self.build(node.left)
             right_nfa = self.build(node.right)
