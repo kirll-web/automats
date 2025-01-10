@@ -221,7 +221,6 @@ def main(args):
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
-    regex = "r*r"
     parser = RegexParser(regex)
     ast = parser.parse()
     print(ast)
