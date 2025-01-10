@@ -2,6 +2,8 @@ import sys
 OUTPUT_CH = "OUTPUT_CH"
 QS = "QS"
 
+OPERATORS = ["(",")", "|"]
+
 class State:
     def __init__(self, id):
         self.id = id
@@ -61,30 +63,44 @@ class RegexToNFA:
         """Построить НКА из регулярного выражения."""
         operators = []
         symbols = []
+        free_symbols = 0
 
         for ch in regex:
             if ch == '(':
                 operators.append(ch)
             elif ch == ')':
-                while operators and operators[-1] != '(':
+                #ошибка здесь. У скобок выше приоритет, а я складываю уже всё имеющееся
+                #+ если у нас двойные скобки, то при первой убираются все
+                while operators and operators[-1] != "(":
                     self.process_operator(operators, symbols)
-                operators.pop()  # Удалить '('
-            elif ch == '|':
-                operators.append(ch)
-
-                while len(symbols) > 1:
+                while free_symbols > 1:
                     symb2 = symbols.pop()
                     symb1 = symbols.pop()
                     symbols.append(self.nfa_plus_nfa(symb1, symb2))
+                    free_symbols -= 1
+                operators.pop()
+                free_symbols = 0
+
+            elif ch == '|':
+                if "|" in operators: # тут ошибка будет в случае a|b|a|rc
+                    while free_symbols != 0  and len(symbols) > 2:
+                        symb2 = symbols.pop()
+                        symb1 = symbols.pop()
+                        symbols.append(self.nfa_plus_nfa(symb1, symb2))
+                        free_symbols -= 1
+                operators.append(ch)
+
+
             elif ch == '*':
                 nfa = symbols.pop()
                 symbols.append(self.create_kleene_star_nfa(nfa))
             else:
                 symbols.append(self.create_symbol_nfa(ch))
+                free_symbols += 1
 
 
-        while operators:
-            self.process_operator(operators, symbols)
+        # while operators:
+        #     self.process_operator(operators, symbols)
 
         while len(symbols) > 1:
             symb2 = symbols.pop()
@@ -96,8 +112,6 @@ class RegexToNFA:
     def process_operator(self, operators, operands):
         """Обработать оператор (|, *)."""
         operator = operators.pop()
-        if operator == "(":
-            operators.append(operator)
         if operator == '|':
             right = operands.pop()
             left = operands.pop()
@@ -123,6 +137,26 @@ def main(args):
         regex = "(tw|y)*(tq|t)" #FIXME MOCK
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
+
+
+    literals = []
+    buffer = []
+    for i_ch, ch in enumerate(regex):
+        if (ch == "*" or ch == "+") and len(literals) == 0:
+            buffer.append(ch)
+        elif ch not in OPERATORS:
+            literals.append(ch)
+        else:
+            if len(literals) > 0:
+                buffer.append(f'({"".join(literals)})')
+                literals.clear()
+            buffer.append(ch)
+    if len(literals) > 0:
+        buffer.append(f'({"".join(literals)})')
+        literals.clear()
+    print(regex)
+    regex = "".join(buffer)
+    print(regex)
 
     converter = RegexToNFA()
     nfa = converter.build_nfa(regex)
