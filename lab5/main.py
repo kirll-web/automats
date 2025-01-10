@@ -180,7 +180,7 @@ class NFABuilder:
         elif isinstance(node, Alternation):
             left_nfa = self.build(node.left)
             right_nfa = self.build(node.right)
-            return self.nfa_plus_nfa(left_nfa, right_nfa)
+            return self.create_union_nfa(left_nfa, right_nfa)
         elif isinstance(node, Star):
             nfa = self.build(node.node)
             return self.create_kleene_star_nfa(nfa)
@@ -210,14 +210,12 @@ def print_nfa(nfa):
                 to_visit.append(target)
 
 def main(args):
-    output_file_name = ""
-    regex = ""
     try:
         output_file_name = args[0]
         regex = args[1]
     except Exception:
         output_file_name = "output.csv"
-        regex = "((wwε*t|wte)(((eε*t)|ε))*r|wteq)((t(wwε*t|wte)|(qte|r))(((eε*t)|ε))*r|(twteq|qteq))*tt|t" #FIXME MOCK
+        regex = "(tw|y)*(tq|t)" #FIXME MOCK
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
