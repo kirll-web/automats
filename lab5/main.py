@@ -50,6 +50,14 @@ class RegexToNFA:
         nfa.accept_state.transitions[None] = [medium]
         return NFA(start, accept)
 
+    def create_plus_nfa(self, nfa):
+        """Создать НКА для операции '*'."""
+        start = self.create_state()
+        accept = self.create_state()
+        start.transitions[None] = [nfa.start_state]  # Пустые переходы
+        nfa.accept_state.transitions[None] = [nfa.start_state, accept]
+        return NFA(start, accept)
+
     def nfa_plus_nfa(self, nfa1: NFA, nfa2: NFA):
         """Создать НКА для операции '*'."""
         start = self.create_state()
@@ -69,8 +77,6 @@ class RegexToNFA:
             if ch == '(':
                 operators.append(ch)
             elif ch == ')':
-                #ошибка здесь. У скобок выше приоритет, а я складываю уже всё имеющееся
-                #+ если у нас двойные скобки, то при первой убираются все
                 while operators and operators[-1] != "(":
                     self.process_operator(operators, symbols)
                 while free_symbols > 1:
@@ -82,25 +88,29 @@ class RegexToNFA:
                 free_symbols = 0
 
             elif ch == '|':
-                if "|" in operators: # тут ошибка будет в случае a|b|a|rc
-                    while free_symbols != 0  and len(symbols) > 2:
-                        symb2 = symbols.pop()
-                        symb1 = symbols.pop()
-                        symbols.append(self.nfa_plus_nfa(symb1, symb2))
-                        free_symbols -= 1
+                while free_symbols > 1:
+                    symb2 = symbols.pop()
+                    symb1 = symbols.pop()
+                    symbols.append(self.nfa_plus_nfa(symb1, symb2))
+                    free_symbols -= 1
+                free_symbols = 0
                 operators.append(ch)
 
 
             elif ch == '*':
                 nfa = symbols.pop()
                 symbols.append(self.create_kleene_star_nfa(nfa))
+            elif ch == '+':
+                nfa = symbols.pop()
+                symbols.append(self.create_plus_nfa(nfa))
+
             else:
                 symbols.append(self.create_symbol_nfa(ch))
                 free_symbols += 1
 
 
-        # while operators:
-        #     self.process_operator(operators, symbols)
+        while operators:
+             self.process_operator(operators, symbols)
 
         while len(symbols) > 1:
             symb2 = symbols.pop()
