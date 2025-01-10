@@ -173,6 +173,8 @@ class NFABuilder:
     def build(self, node):
         if isinstance(node, Literal):
             return self.create_symbol_nfa(node.char)
+        if isinstance(node, Epsilon):
+            return self.create_symbol_nfa("ε")
         elif isinstance(node, Concatenation):
             left_nfa = self.build(node.left)
             right_nfa = self.build(node.right)
@@ -189,25 +191,7 @@ class NFABuilder:
         else:
             raise ValueError(f"Unknown node type: {type(node)}")
 
-def print_nfa(nfa):
-    print("NFA States and Transitions:")
-    visited = set()
-    to_visit = [nfa.start]
-    while to_visit:
-        state = to_visit.pop()
-        if state in visited:
-            continue
-        visited.add(state)
-        print(f"State {state.id}:")
-        for symbol, targets in state.transitions.items():
-            for target in targets:
-                print(f"  {symbol} -> State {target.id}")
-                if target not in visited:
-                    to_visit.append(target)
-        for target in state.epsilon_transitions:
-            print(f"  ε -> State {target.id}")
-            if target not in visited:
-                to_visit.append(target)
+
 
 def main(args):
     try:
