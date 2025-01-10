@@ -78,7 +78,8 @@ class RegexToNFA:
                 operators.append(ch)
             elif ch == ')':
                 while operators and operators[-1] != "(":
-                    self.process_operator(operators, symbols)
+                    operator = operators.pop()
+                    self.process_operator(operators, symbols, operator)
                 while free_symbols > 1:
                     symb2 = symbols.pop()
                     symb1 = symbols.pop()
@@ -110,7 +111,15 @@ class RegexToNFA:
 
 
         while operators:
-             self.process_operator(operators, symbols)
+            operator = operators.pop()
+            if operator == "|":
+                end_symb = symbols.pop()
+                while len(symbols) > 1:
+                    symb2 = symbols.pop()
+                    symb1 = symbols.pop()
+                    symbols.append(self.nfa_plus_nfa(symb1, symb2))
+                symbols.append(end_symb)
+            self.process_operator(operators, symbols, operator)
 
         while len(symbols) > 1:
             symb2 = symbols.pop()
@@ -119,9 +128,10 @@ class RegexToNFA:
 
         return symbols.pop()
 
-    def process_operator(self, operators, operands):
+    def process_operator(self, operators, operands, operator):
         """Обработать оператор (|, *)."""
-        operator = operators.pop()
+        if operator == "(":
+            operators.append("(")
         if operator == '|':
             right = operands.pop()
             left = operands.pop()
@@ -144,7 +154,7 @@ def main(args):
         regex = args[1]
     except Exception:
         output_file_name = "output.csv"
-        regex = "q" #FIXME MOCK
+        regex = "((wwε*t|wte)(((eε*t)|ε))*r|wteq)((t(wwε*t|wte)|(qte|r))(((eε*t)|ε))*r|(twteq|qteq))*tt|t" #FIXME MOCK
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
