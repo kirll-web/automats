@@ -144,7 +144,7 @@ def main(args):
         regex = args[1]
     except Exception:
         output_file_name = "output.csv"
-        regex = "(tw|y)*(tq|t)" #FIXME MOCK
+        regex = "q" #FIXME MOCK
     output_file = open(output_file_name, "w+", encoding="utf-8")
     output_file.close()
 
@@ -233,6 +233,12 @@ def main(args):
                     else: output_dict[symbol_str][state_index] += f",{target.id}"
                     print(f"State {state.id} --{symbol_str}--> State {target.id}")
                     stack.append(target)
+
+        for symbol in output_dict:
+            if symbol == QS or symbol == OUTPUT_CH: continue
+            if len(output_dict[symbol]) < len(output_dict[QS]):
+                for i in range(len(output_dict[symbol]), len(output_dict[QS])):
+                    output_dict[item].append("")
 
 
         for item in output_dict:
