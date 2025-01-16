@@ -3,7 +3,7 @@ import sys
 
 # Регулярные выражения для токенов
 TOKEN_PATTERNS = [
-    ("WHITESPACE", r"\s+"),
+    ("WHITESPACE", r"\s"),
     ("LINE_COMMENT", r"//.*"),
     ("START_BLOCK_COMMENT", r"\{\s*.*"),  # Многострочные комментарии
     ("END_BLOCK_COMMENT", r"(?:.|\n)*?\}"),  # Многострочные комментарии
@@ -56,7 +56,6 @@ class PascalLexer:
     def next_line(self):
         self.current_line = self.file.readline()
         if self.current_line:
-            self.current_line = self.current_line.replace('\u00A0', ' ').strip()
             self.line_number += 1
             self.position = 0
             return True
@@ -69,7 +68,9 @@ class PascalLexer:
                     return None
 
             text = self.current_line[self.position:]
-            for token_type, pattern in TOKEN_PATTERNS:
+            i = 0
+            while i < len(TOKEN_PATTERNS):
+                token_type, pattern = TOKEN_PATTERNS[i]
                 regex = re.compile(pattern)
                 match = regex.match(text)
                 if match:
@@ -78,7 +79,8 @@ class PascalLexer:
                     self.position += len(value)
 
                     if token_type in ["WHITESPACE"]:
-                        text = text.lstrip()
+                        text = text[1:]
+                        i = 0
                         continue
                     if token_type in ["START_BLOCK_COMMENT"]:
                         while True:
@@ -93,12 +95,13 @@ class PascalLexer:
                             else:
                                 value += self.current_line
                     return f"{token_type} ({self.line_number},{start_position}) \"{value}\""
+                i += 1
 
-
-            bad_char = self.current_line[self.position]
-            start_position = self.position + 1
-            self.position += 1
-            return f"BAD: ({self.line_number},{start_position}) \"{bad_char}\""
+            if self.position < len(self.current_line):
+                bad_char = self.current_line[self.position]
+                start_position = self.position + 1
+                self.position += 1
+                return f"BAD: ({self.line_number},{start_position}) \"{bad_char}\""
 
     def close(self):
         self.file.close()
