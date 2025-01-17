@@ -91,10 +91,10 @@ class PascalLexer:
                             if match:
                                 value += match.group(0)
                                 self.position += len(match.group(0))
-                                return f" BLOCK_COMMENT ({self.line_number},{start_position}) \"{value}\""
+                                return f"BLOCK_COMMENT ({self.line_number},{start_position}) \"{value}\""
                             else:
                                 value += self.current_line
-                    if len(value) > 128:
+                    if len(value) > 256:
                         return f"BAD: ({self.line_number},{start_position}) \"{value}\""
                     return f"{token_type} ({self.line_number},{start_position}) \"{value}\""
                 i += 1
