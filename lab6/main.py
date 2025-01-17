@@ -1,148 +1,199 @@
-import re
+import string
 import sys
 
-# Регулярные выражения для токенов
-TOKEN_PATTERNS = [
-    ("WHITESPACE", r"\s"),
-    ("LINE_COMMENT", r"//.*"),
-    ("BLOCK_COMMENT", r"\{(?:.|\n)*?\}"),  # Многострочные комментарии в одной строке
-    ("START_BLOCK_COMMENT", r"\{\s*.*"),  # Многострочные комментарии
-    ("END_BLOCK_COMMENT", r"(?:.|\n)*?\}"),  # Многострочные комментарии
-
-    ("ARRAY", r"(?i)\bARRAY\b"),
-    ("BEGIN", r"(?i)\bBEGIN\b"),
-    ("ELSE", r"(?i)\bELSE\b"),
-    ("END", r"(?i)\bEND\b"),
-    ("IF", r"(?i)\bIF\b"),
-    ("OF", r"(?i)\bOF\b"),
-    ("OR", r"(?i)\bOR\b"),
-    ("PROGRAM", r"(?i)\bPROGRAM\b"),
-    ("PROCEDURE", r"(?i)\bPROCEDURE\b"),
-    ("THEN", r"(?i)\bTHEN\b"),
-    ("TYPE", r"(?i)\bTYPE\b"),
-    ("VAR", r"(?i)\bVAR\b"),
-    ("IDENTIFIER", r"[a-zA-Z_][a-zA-Z0-9_]*"),
-    ("STRING", r"'(?:[^'\\]|\\.)*'"),
-    ("INTEGER", r"\b\d+\b"),
-    ("FLOAT", r"^\d+(\.\d+)?([eE][+-]?\d+)?$"),  # Числа с плавающей точкой или экспонентой
-    ("INTEGER", r"^(?<![\d.])\b\d+\b(?![\d.])$"),
-    ("PLUS", r"\+"),
-    ("MINUS", r"-"),
-    ("DIVIDE", r"/"),
-    ("SEMICOLON", r";"),
-    ("COMMA", r","),
-    ("LEFT_PAREN", r"\("),
-    ("RIGHT_PAREN", r"\)"),
-    ("LEFT_BRACKET", r"\["),
-    ("RIGHT_BRACKET", r"\]"),
-    ("EQ", r"="),
-    ("GREATER", r">"),
-    ("LESS", r"<"),
-    ("LESS_EQ", r"<="),
-    ("GREATER_EQ", r">="),
-    ("NOT_EQ", r"<>"),
-    ("COLON", r":"),
-    ("ASSIGN", r":="),
-    ("DOT", r"\."),
-]
 
 class Token:
-    def __init__(self, name, value, line_number, start_position):
-        self.name = name
+    def __init__(self, line, column, value, token_type):
+        self.line = line
+        self.column = column
         self.value = value
-        self.line_number = line_number
-        self.start_position = start_position
+        self.token_type = token_type
 
-class PascalLexer:
-    def __init__(self, input_file_name):
-        self.file = open(input_file_name, 'r', encoding='utf-8')
-        self.line_number = 0
-        self.current_line = ''
-        self.current_words = []
-        self.position_word = 0
-        self.position = 0
+    def __str__(self):
+        return f"{self.token_type} ({self.line}, {self.column}) \"{self.value}\""
 
-    def next_line(self):
-        self.current_line = next(self.file, None)  # Возвращает None на конце файла
+class StringToken(Token):
+    def __init__(self, line, column, value):
+        super().__init__(line, column, value, "STRING")
 
-        if not self.current_line  is None:
-            self.current_line = self.current_line.strip()
-            self.line_number += 1
-            self.position = 0
-            self.current_words = self.current_line.split(" ")
-            self.position_word = 0
+class Keyword(Token):
+    def __init__(self, line, column, value):
+        super().__init__(line, column, value, "PROGRAM" if value == "program" else "KEYWORD")
 
-            return True
-        return False
+
+class Identifier(Token):
+    def __init__(self, line, column, value):
+        super().__init__(line, column, value, "IDENTIFIER")
+
+
+class IntegerToken(Token):
+    def __init__(self, line, column, value):
+        super().__init__(line, column, value, "INTEGER")
+
+class FloatToken(Token):
+    def __init__(self, line, column, value):
+        super().__init__(line, column, value, "FLOAT")
+
+class Operator(Token):
+    def __init__(self, line, column, value):
+        super().__init__(line, column, value, "OPERATOR")
+
+class Bad(Token):
+    def __init__(self, line, column, value):
+        super().__init__(line, column, value, "Bad")
+
+class Punctuation(Token):
+    def __init__(self, line, column, value):
+        super().__init__(line, column, value,
+                         "SEMICOLON" if value == ";" else "COLON" if value == ":" else "PUNCTUATION")
+
+
+class EndOfFile(Token):
+    def __init__(self, line, column):
+        super().__init__(line, column, "", "EOF")
+
+    def __str__(self):
+        return f"EOF ({self.line}, {self.column})"
+
+
+class Lexer:
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.file = open(file_path, 'r')  # Открываем файл для чтения
+        self.line = 1
+        self.column = 0
+        self.current_char = None
+        self.buffer = ''  # Буфер для текущей строки
+        self.advance()  # Инициализируем первый символ
+
+        # Ключевые слова Pascal
+        self.keywords = {
+            "program", "begin", "end", "var", "if", "then", "else", "for", "while", "array"
+        }
+
+        # Операторы и знаки препинания
+        self.operators = set(["+", "-", "*", "/", ":=", "=", "<>", "<", ">", "<=", ">="])
+        self.punctuations = set([";", ".", "(", ")", ":"])
+
+    def advance(self):
+        """Продвигаемся к следующему символу, включая чтение из файла"""
+        if self.column < len(self.buffer):
+            self.current_char = self.buffer[self.column]
+            self.column += 1
+        else:
+            self.buffer = next(self.file, None)  # Читаем следующую строку
+            if self.buffer is None:  # EOF
+                self.current_char = None
+                self.file.close()  # Закрываем файл при достижении конца
+            else:
+                self.line += 1
+                self.column = 0
+                self.advance()  # Читаем первый символ новой строки
+
+    def skip_whitespace(self):
+        """Пропускаем пробелы и переносы строк"""
+        while self.current_char is not None and self.current_char.isspace():
+            self.advance()
+
+    def parse_identifier(self):
+        """Читаем идентификатор или ключевое слово"""
+        start_column = self.column
+        value = ''
+        while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'):
+            value += self.current_char
+            self.advance()
+        return Identifier(self.line, start_column, value)
+
+    def parse_number(self):
+        """Читаем целое число или число с плавающей запятой"""
+        start_column = self.column
+        value = ''
+        has_dot = False
+        has_exponent = False
+
+        while self.current_char is not None and (self.current_char.isdigit() or self.current_char in '.eE+-'):
+            if self.current_char == '.':
+                if has_dot:
+                    break
+                has_dot = True
+            elif self.current_char in 'eE':
+                if has_exponent:
+                    break
+                has_exponent = True
+            elif self.current_char in '+-' and not has_exponent:
+                break
+            value += self.current_char
+            self.advance()
+
+        if has_dot or has_exponent:
+            return FloatToken(self.line, start_column, value)
+        else:
+            return IntegerToken(self.line, start_column, int(value))
+
+    def parse_string(self):
+        """Читаем строковый литерал, заключенный в кавычки"""
+        start_column = self.column
+        value = ''
+        self.advance()  # Пропускаем начальную кавычку
+
+        while self.current_char is not None:
+            if self.current_char == '"':
+                self.advance()  # Пропускаем закрывающую кавычку
+                return StringToken(self.line, start_column, value)
+            value += self.current_char
+            self.advance()
+
+        raise ValueError(f"Unterminated string at line {self.line}, column {start_column}")
 
     def next_token(self):
-        while True:
-            if self.position_word >= len(self.current_words):
-                if not self.next_line():
-                    return None
+        """Возвращаем следующий токен"""
+        self.skip_whitespace()
 
-            text = self.current_words[self.position_word]
-            i = 0
-            while i < len(TOKEN_PATTERNS):
-                token_type, pattern = TOKEN_PATTERNS[i]
-                regex = re.compile(pattern)
-                match = regex.fullmatch(text)
-                if match:
-                    value = match.group(0)
-                    start_position = self.position + 1
-                    self.position += len(value)
-                    self.position_word += 1
+        if self.current_char is None:
+            return EndOfFile(self.line, self.column)
 
-                    if token_type in ["START_BLOCK_COMMENT"]:
-                        while True:
-                            if self.position_word >= len(self.current_words) and not self.next_line():
-                                return Token("BAD", value, self.line_number, start_position)
-                            regex = re.compile(r"(?:.|\n)*?\}")
-                            match = regex.match(self.current_words[self.position_word])
-                            if match:
-                                value += f"\n{match.group(0)}"
-                                self.position_word += 1
-                                return Token("BLOCK_COMMENT", value, self.line_number, start_position)
-                            else:
-                                value += f"\n{self.current_words[self.position_word]}"
-                                self.position_word += 1
-                    if token_type in ["LINE_COMMENT"]:
-                        value += " ".join(self.current_words[self.position_word:])
-                        self.next_line()
-                        return Token(token_type, value, self.line_number, start_position)
+        if self.current_char.isalpha():
+            return self.parse_identifier()
 
-                    if len(value) > 256:
-                        return Token("BAD", value, self.line_number, start_position)
-                    return Token(token_type, value, self.line_number, start_position)
-                i += 1
+        if self.current_char.isdigit():
+            return self.parse_number()
 
-            bad_char = self.current_words[self.position_word]
-            start_position = self.position + len(bad_char)
-            self.position_word += 1
-            return Token("BAD", bad_char, self.line_number, start_position)
+        if self.current_char == '"':
+            return self.parse_string()
 
-    def close(self):
-        self.file.close()
+        if self.current_char in ''.join(self.operators):
+            return self.parse_operator()
+
+        if self.current_char in self.punctuations:
+            return self.parse_punctuation()
+
+        value = self.current_char
+        self.advance()
+        return Bad(self.line, self.column, value)
+
+    def parse_operator(self):
+        """Читаем оператор"""
+        start_column = self.column
+        value = self.current_char
+        self.advance()
+        return Operator(self.line, start_column, value)
+
+    def parse_punctuation(self):
+        """Читаем пунктуацию"""
+        start_column = self.column
+        value = self.current_char
+        self.advance()
+        return Punctuation(self.line, start_column, value)
+
+
+def main():
+    file_path = 'p1.pas'  # Имя файла с кодом на Pascal
+    lexer = Lexer(file_path)
+
+    token = lexer.next_token()
+    while not isinstance(token, EndOfFile):
+        print(token)
+        token = lexer.next_token()
+
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python PascalLexer.py <input_file> <output_file>")
-        sys.exit(1)
-
-    input_file = sys.argv[1]
-    output_file = sys.argv[2]
-
-    lexer = PascalLexer(input_file)
-
-    with open(output_file, 'w', encoding='utf-8') as output:
-        while True:
-            token = lexer.next_token()
-            if token is None:
-                break
-            if token.name == "LINE_COMMENT" or token.name == "BLOCK_COMMENT":
-                continue
-
-            print(f"{token.name} ({token.line_number}, {token.start_position}) \"{token.value}\"")
-            output.write(f"{token.name} ({token.line_number}, {token.start_position}) \"{token.value}\"")
-
-    lexer.close()
-
+    main()
