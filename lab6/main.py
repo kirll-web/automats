@@ -78,7 +78,7 @@ class PascalLexer:
         self.file = open(input_file_name, 'r', encoding='utf-8')
         self.line_number = 0
         self.current_line = ''
-        self.position = 0
+        self.position = -1
         self.line = 1
         self.current_char = None
         self.buffer = ''  # Буфер для текущей строки
@@ -92,7 +92,7 @@ class PascalLexer:
         if not self.current_line is None:
             self.current_line = self.current_line.strip().replace("\xa0", " ")
             self.line_number += 1
-            self.position = 0
+            self.position = -1
 
             return True
         self.current_line = ""
@@ -122,7 +122,7 @@ class PascalLexer:
         self.current_value = None
         start = self.start_position
         self.start_position = self.position
-        return Token(name, self.line_number, start, value)
+        return Token(name, self.line_number, start + 1, value)
 
     def parse_block_comment(self):
         self.start_position = self.position
