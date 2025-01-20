@@ -210,6 +210,7 @@ class PascalLexer:
                     self.current_value += self.current_char
                     continue
             else:
+                self.go_back()
                 break
         match = regexF.fullmatch(self.current_value)
         if match:
