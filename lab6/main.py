@@ -133,7 +133,7 @@ class PascalLexer:
             if not self.try_get_next_char():
                 while True:
                     if not self.next_line():
-                        return self.create_token("Bad")
+                        return self.create_token("BAD")
                     if len(self.current_line) > 0:
                         break
                 self.try_get_next_char()
