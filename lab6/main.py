@@ -11,7 +11,7 @@ TOKEN_PATTERNS = {
     "IDENTIFIER": r"[a-zA-Z_][a-zA-Z0-9_]*",
     "STRING": r"'(?:[^'\\]|\\.)*'",
     "INTEGER": r"^(?<![\d.])\b\d+\b(?![\d.])$",  # Окончательная версия для целых чисел
-    "FLOAT": r"^\d+\.\d+([eE][+-]?\d+)?$|^\d+[eE][+-]?\d+$",  # Числа с плавающей точкой или экспонентой
+    "FLOAT": r"^\d+\.\d+([eE][+-]?\d+)?$|^\d+[e|E][+-]?\d+$",  # Числа с плавающей точкой или экспонентой
     "PLUS": r"\+",
     "MINUS": r"-",
     "DIVIDE": r"/",
@@ -24,8 +24,8 @@ TOKEN_PATTERNS = {
     "EQ": r"=",
     "GREATER": r">",
     "LESS": r"<",
-    "LESS_EQ": r"<=",
-    "GREATER_EQ": r">=",
+    "GREATER_EQ": r"<=",
+    "LESS_EQ": r">=",
     "NOT_EQ": r"<>",
     "COLON": r":",
     "ASSIGN": r":=",
@@ -78,7 +78,7 @@ class PascalLexer:
         self.file = open(input_file_name, 'r', encoding='utf-8')
         self.line_number = 0
         self.current_line = ''
-        self.position = -1
+        self.position = 0
         self.line = 1
         self.current_char = None
         self.buffer = ''  # Буфер для текущей строки
@@ -92,7 +92,7 @@ class PascalLexer:
         if not self.current_line is None:
             self.current_line = self.current_line.strip().replace("\xa0", " ")
             self.line_number += 1
-            self.position = -1
+            self.position = 0
 
             return True
         self.current_line = ""
@@ -128,20 +128,20 @@ class PascalLexer:
         self.start_position = self.position
         self.current_value = self.current_char
         while True:
-            if not self.try_get_next_char() is None and not self.next_line():
+            if not self.try_get_next_char() and not self.next_line():
                 return self.create_token("Bad")
 
             self.current_value += self.current_char
             if self.current_char == "}":
                 return self.create_token("BLOCK_COMMENT")
 
-    def parse_string(self):
+    def parse_string(self, end_char):
         self.current_value = self.current_char
         self.start_position = self.position
         while True:
             if self.try_get_next_char():
                 self.current_value += self.current_char
-                if self.current_char == "\"":
+                if self.current_char == end_char:
                     return self.create_token("STRING")
 
             else:
@@ -158,6 +158,8 @@ class PascalLexer:
                 while self.try_get_next_char():
                     self.current_value += self.current_char
                 return self.create_token("LINE_COMMENT")
+            else:
+                return self.create_token("DIVIDE")
         else:
             return self.create_token("DIVIDE")
 
@@ -180,14 +182,14 @@ class PascalLexer:
 
                             match = regexF.fullmatch(self.current_value)
                             if match:
-                                if len(self.current_value) > 16:
+                                if len(self.current_value) > 30:  #fixme mock
                                     return self.create_token("BAD")
 
                                 return self.create_token("FLOAT")
 
                             match = regexI.fullmatch(self.current_value)
                             if match:
-                                if len(self.current_value) > 16:
+                                if len(self.current_value) > 30:#fixme mock
                                     return self.create_token("BAD")
                                 return self.create_token("INTEGER")
                             return self.create_token("BAD")
@@ -198,7 +200,7 @@ class PascalLexer:
                         self.current_value += self.current_char
                         break
                 elif self.current_char in delimeters:
-                    if self.current_value[-1] == "e" and self.current_char == "-" or self.current_char == "+":
+                    if (self.current_value[-1] == "e" or (self.current_value[-1] == "E")) and (self.current_char == "-" or self.current_char == "+"):
                         self.current_value += self.current_char
                         continue
 
@@ -214,15 +216,15 @@ class PascalLexer:
                 break
         match = regexF.fullmatch(self.current_value)
         if match:
-            if len(self.current_value) > 16:
+            if len(self.current_value) > 29:
                 return self.create_token("BAD")
             return self.create_token("FLOAT")
 
         match = regexI.fullmatch(self.current_value)
         if match:
-            if len(self.current_value) > 16:
+            if len(self.current_value) > 30:
                 return self.create_token("BAD")
-            return self.create_token("INTEGER")
+            return self.create_token("INTEGER")#fixme mock
 
         return self.create_token("BAD")
 
@@ -274,8 +276,8 @@ class PascalLexer:
             if self.current_char.isalpha() or self.current_char == "_":
                 return self.parse_identifier()
 
-            if self.current_char == '"':
-                return self.parse_string()
+            if self.current_char == '"' or self.current_char == "'" :
+                return self.parse_string(self.current_char)
 
             if self.current_char == '+':
                 self.current_value = self.current_char
@@ -315,6 +317,10 @@ class PascalLexer:
             if self.current_char == '=':
                 self.current_value = self.current_char
                 return self.create_token("EQ")
+
+            if self.current_char == '*':
+                self.current_value = self.current_char
+                return self.create_token("MULTIPLICATION")
 
             if self.current_char == '<':
                 next_char = self.show_next_char()
@@ -378,7 +384,7 @@ if __name__ == "__main__":
 
             if token is None:
                 break
-            if token.name == "LINE_COMMENT" or token.name == "BLOCK_COMMENT":
+            if token.name == "LINE_COMMENT" or token.name == "BLOCK_COMMENT" or token.name == "BAD":
                 continue
 
             print(f"{token.name} ({token.line_number}, {token.start_position}) \"{token.value}\"")
