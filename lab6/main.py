@@ -334,11 +334,11 @@ class PascalLexer:
                     if next_char == "=":
                         char = self.current_char + next_char
                         self.try_get_next_char()
-                        return Token("LESS EQ", self.line_number, self.start_position + 1, char)
+                        return Token("LESS_EQ", self.line_number, self.start_position + 1, char)
                     if next_char == '>':
                         char = self.current_char + next_char
                         self.try_get_next_char()
-                        return Token("NOT EQ", self.line_number, self.start_position + 1, char)
+                        return Token("NOT_EQ", self.line_number, self.start_position + 1, char)
                 self.current_value = self.current_char
                 return self.create_token("LESS")
 
@@ -349,7 +349,7 @@ class PascalLexer:
                     char = self.current_char + next_char
                     pos = self.position
                     self.try_get_next_char()
-                    return Token("LESS EQ", self.line_number, self.start_position + 1, char)
+                    return Token("LESS_EQ", self.line_number, self.start_position + 1, char)
                 self.current_value = self.current_char
                 return self.create_token("GREATER")
 
