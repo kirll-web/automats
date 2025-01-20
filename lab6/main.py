@@ -375,11 +375,12 @@ if __name__ == "__main__":
     with open(output_file, 'w', encoding='utf-8') as output:
         while True:
             token = lexer.next_token()
+
             if token is None:
                 break
-            # if token.name == "LINE_COMMENT" or token.name == "BLOCK_COMMENT":
-            #     continue
+            if token.name == "LINE_COMMENT" or token.name == "BLOCK_COMMENT":
+                continue
 
             print(f"{token.name} ({token.line_number}, {token.start_position}) \"{token.value}\"")
-            output.write(f"{token.name} ({token.line_number}, {token.start_position}) \"{token.value}\"")
+            output.write(f"{token.name} ({token.line_number}, {token.start_position}) \"{token.value}\"\n")
     lexer.close()
