@@ -182,9 +182,6 @@ class PascalLexer:
 
                             match = regexF.fullmatch(self.current_value)
                             if match:
-                                if len(self.current_value) > 20:  #fixme mock
-                                    return self.create_token("BAD")
-
                                 return self.create_token("FLOAT")
 
                             match = regexI.fullmatch(self.current_value)
@@ -216,8 +213,6 @@ class PascalLexer:
                 break
         match = regexF.fullmatch(self.current_value)
         if match:
-            if len(self.current_value) > 20:
-                return self.create_token("BAD")
             return self.create_token("FLOAT")
 
         match = regexI.fullmatch(self.current_value)
