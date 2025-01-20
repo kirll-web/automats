@@ -85,6 +85,7 @@ class PascalLexer:
         self.next_line()  # Инициализируем первый символ
         self.current_value = None
         self.start_position =  -1
+        self.start_line = 0
 
     def next_line(self):
         self.current_line = next(self.file, None)  # Возвращает None на конце файла
@@ -122,10 +123,11 @@ class PascalLexer:
         self.current_value = None
         start = self.start_position
         self.start_position = self.position
-        return Token(name, self.line_number, start + 1, value)
+        return Token(name, self.start_line, start + 1, value)
 
     def parse_block_comment(self):
         self.start_position = self.position
+        self.start_line = self.line_number
         self.current_value = self.current_char
         while True:
             if not self.try_get_next_char():
@@ -143,6 +145,7 @@ class PascalLexer:
     def parse_string(self, end_char):
         self.current_value = self.current_char
         self.start_position = self.position
+        self.start_line = self.line_number
         while True:
             if self.try_get_next_char():
                 self.current_value += self.current_char
@@ -155,6 +158,7 @@ class PascalLexer:
     def parse_divide(self):
         self.current_value = self.current_char
         self.start_position = self.position
+        self.start_line = self.line_number
 
         next_char = self.show_next_char()
 
@@ -171,6 +175,7 @@ class PascalLexer:
     def parse_digit(self):
         self.current_value = self.current_char
         self.start_position = self.position
+        self.start_line = self.line_number
         regexF = re.compile(TOKEN_PATTERNS["FLOAT"])
         regexI = re.compile(TOKEN_PATTERNS["INTEGER"])
 
@@ -232,6 +237,7 @@ class PascalLexer:
     def parse_identifier(self):
         self.current_value = self.current_char
         self.start_position = self.position
+        self.start_line = self.line_number
 
         while True:
             if self.try_get_next_char():
@@ -286,58 +292,70 @@ class PascalLexer:
             if self.current_char == '+':
                 self.current_value = self.current_char
                 self.start_position = self.position
+                self.start_line = self.line_number
                 return self.create_token("PLUS")
 
             if self.current_char == '-':
                 self.current_value = self.current_char
                 self.start_position = self.position
+                self.start_line = self.line_number
                 return self.create_token("MINUS")
 
             if self.current_char == '/':
+                self.start_line = self.line_number
                 return self.parse_divide()
 
             if self.current_char == ';':
                 self.current_value = self.current_char
                 self.start_position = self.position
+                self.start_line = self.line_number
                 return self.create_token("SEMICOLON")
 
             if self.current_char == ',':
                 self.current_value = self.current_char
                 self.start_position = self.position
+                self.start_line = self.line_number
                 return self.create_token("COMMA")
 
             if self.current_char == '(':
                 self.current_value = self.current_char
                 self.start_position = self.position
+                self.start_line = self.line_number
                 return self.create_token("LEFT_PAREN")
 
             if self.current_char == ')':
                 self.current_value = self.current_char
                 self.start_position = self.position
+                self.start_line = self.line_number
                 return self.create_token("RIGHT_PAREN")
 
             if self.current_char == '[':
                 self.current_value = self.current_char
                 self.start_position = self.position
+                self.start_line = self.line_number
                 return self.create_token("LEFT_BRACKET")
 
             if self.current_char == ']':
                 self.current_value = self.current_char
                 self.start_position = self.position
+                self.start_line = self.line_number
                 return self.create_token("RIGHT_BRACKET")
 
             if self.current_char == '=':
                 self.start_position = self.position
                 self.current_value = self.current_char
+                self.start_line = self.line_number
                 return self.create_token("EQ")
 
             if self.current_char == '*':
                 self.start_position = self.position
                 self.current_value = self.current_char
+                self.start_line = self.line_number
                 return self.create_token("MULTIPLICATION")
 
             if self.current_char == '<':
                 self.start_position = self.position
+                self.start_line = self.line_number
                 next_char = self.show_next_char()
                 if not next_char is None:
                     if next_char == "=":
@@ -353,6 +371,7 @@ class PascalLexer:
 
             if self.current_char == '>':
                 self.start_position = self.position
+                self.start_line = self.line_number
                 next_char = self.show_next_char()
                 if next_char == "=":
                     char = self.current_char + next_char
@@ -364,6 +383,7 @@ class PascalLexer:
 
             if self.current_char == ':':
                 self.start_position = self.position
+                self.start_line = self.line_number
                 if not self.show_next_char() is None and self.show_next_char() == "=":
                     self.current_value = self.current_char + self.show_next_char()
                     self.try_get_next_char()
@@ -374,6 +394,7 @@ class PascalLexer:
 
             if self.current_char == '.':
                 self.start_position = self.position
+                self.start_line = self.line_number
                 self.current_value = self.current_char
                 return self.create_token("DOT")
 
