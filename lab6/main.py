@@ -90,7 +90,7 @@ class PascalLexer:
         self.current_line = next(self.file, None)  # Возвращает None на конце файла
 
         if not self.current_line is None:
-            self.current_line = self.current_line.strip().replace("\xa0", " ")
+            self.current_line = self.current_line.replace("\xa0", " ")
             self.line_number += 1
             self.position = -1
 
