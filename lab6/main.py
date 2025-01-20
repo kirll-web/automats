@@ -84,7 +84,7 @@ class PascalLexer:
         self.buffer = ''  # Буфер для текущей строки
         self.next_line()  # Инициализируем первый символ
         self.current_value = None
-        self.start_position = 0
+        self.start_position =  -1
 
     def next_line(self):
         self.current_line = next(self.file, None)  # Возвращает None на конце файла
@@ -276,10 +276,12 @@ class PascalLexer:
 
             if self.current_char == '+':
                 self.current_value = self.current_char
+                self.start_position = self.position
                 return self.create_token("PLUS")
 
             if self.current_char == '-':
                 self.current_value = self.current_char
+                self.start_position = self.position
                 return self.create_token("MINUS")
 
             if self.current_char == '/':
@@ -287,63 +289,72 @@ class PascalLexer:
 
             if self.current_char == ';':
                 self.current_value = self.current_char
+                self.start_position = self.position
                 return self.create_token("SEMICOLON")
 
             if self.current_char == ',':
                 self.current_value = self.current_char
+                self.start_position = self.position
                 return self.create_token("COMMA")
 
             if self.current_char == '(':
                 self.current_value = self.current_char
+                self.start_position = self.position
                 return self.create_token("LEFT_PAREN")
 
             if self.current_char == ')':
                 self.current_value = self.current_char
+                self.start_position = self.position
                 return self.create_token("RIGHT_PAREN")
 
             if self.current_char == '[':
                 self.current_value = self.current_char
+                self.start_position = self.position
                 return self.create_token("LEFT_BRACKET")
 
             if self.current_char == ']':
                 self.current_value = self.current_char
+                self.start_position = self.position
                 return self.create_token("RIGHT_BRACKET")
 
             if self.current_char == '=':
+                self.start_position = self.position
                 self.current_value = self.current_char
                 return self.create_token("EQ")
 
             if self.current_char == '*':
+                self.start_position = self.position
                 self.current_value = self.current_char
                 return self.create_token("MULTIPLICATION")
 
             if self.current_char == '<':
+                self.start_position = self.position
                 next_char = self.show_next_char()
                 if not next_char is None:
                     if next_char == "=":
                         char = self.current_char + next_char
-                        pos = self.position
                         self.try_get_next_char()
-                        return Token("LESS EQ", self.line_number, pos, char)
+                        return Token("LESS EQ", self.line_number, self.start_position + 1, char)
                     if next_char == '>':
                         char = self.current_char + next_char
-                        pos = self.position
                         self.try_get_next_char()
-                        return Token("NOT EQ", self.line_number, pos, char)
+                        return Token("NOT EQ", self.line_number, self.start_position + 1, char)
                 self.current_value = self.current_char
                 return self.create_token("LESS")
 
             if self.current_char == '>':
+                self.start_position = self.position
                 next_char = self.show_next_char()
                 if next_char == "=":
                     char = self.current_char + next_char
                     pos = self.position
                     self.try_get_next_char()
-                    return Token("LESS EQ", self.line_number, pos, char)
+                    return Token("LESS EQ", self.line_number, self.start_position + 1, char)
                 self.current_value = self.current_char
                 return self.create_token("GREATER")
 
             if self.current_char == ':':
+                self.start_position = self.position
                 if not self.show_next_char() is None and self.show_next_char() == "=":
                     self.current_value = self.current_char + self.show_next_char()
                     self.try_get_next_char()
@@ -353,6 +364,7 @@ class PascalLexer:
                     return self.create_token("COLON")
 
             if self.current_char == '.':
+                self.start_position = self.position
                 self.current_value = self.current_char
                 return self.create_token("DOT")
 
