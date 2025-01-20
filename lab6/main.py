@@ -24,8 +24,8 @@ TOKEN_PATTERNS = {
     "EQ": r"=",
     "GREATER": r">",
     "LESS": r"<",
-    "GREATER_EQ": r"<=",
-    "LESS_EQ": r">=",
+    "LESS_EQ": r"<=",
+    "GREATER_EQ": r">=",
     "NOT_EQ": r"<>",
     "COLON": r":",
     "ASSIGN": r":=",
@@ -48,7 +48,7 @@ KEYS_PATTERNS = {
     "IDENTIFIER": r"[a-zA-Z_][a-zA-Z0-9_]*"
 }
 
-delimeters = {"\"", " ", "(", ")", "+", "-", "\t", "\n", ";", ":", ",", ".", "[", "]", "{", "}", "*", "/", "'", "\xa0"}
+delimeters = {"\"", "(", ")", "+", "-", "\t", "\n", ";", ":", ",", ".", "[", "]", "{", "}", "*", "/", "'", "\xa0"}
 
 operators = {
     "+": "PLUS",
@@ -128,8 +128,13 @@ class PascalLexer:
         self.start_position = self.position
         self.current_value = self.current_char
         while True:
-            if not self.try_get_next_char() and not self.next_line():
-                return self.create_token("Bad")
+            if not self.try_get_next_char():
+                while True:
+                    if not self.next_line():
+                        return self.create_token("Bad")
+                    if len(self.current_line) > 0:
+                        break
+                self.try_get_next_char()
 
             self.current_value += self.current_char
             if self.current_char == "}":
@@ -271,6 +276,9 @@ class PascalLexer:
 
             if self.current_char.isalpha() or self.current_char == "_":
                 return self.parse_identifier()
+
+            if self.current_char == " ":
+                continue
 
             if self.current_char == '"' or self.current_char == "'" :
                 return self.parse_string(self.current_char)
