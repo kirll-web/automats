@@ -400,7 +400,7 @@ if __name__ == "__main__":
 
             if token is None:
                 break
-            if token.name == "LINE_COMMENT" or token.name == "BLOCK_COMMENT" or token.name == "BAD":
+            if token.name == "LINE_COMMENT" or token.name == "BLOCK_COMMENT":
                 continue
 
             print(f"{token.name} ({token.line_number}, {token.start_position}) \"{token.value}\"")
